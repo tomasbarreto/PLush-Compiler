@@ -2,7 +2,7 @@ val value1 : int := 5;
 val value2 : int := 10;
 
 function square(val x:int) : int {
-    squar := x * x;  # Lexical error: 'squar' instead of 'square'
+    square := x * x;
 }
 
 function min (val x:int, val y:int) : int {
@@ -14,7 +14,7 @@ function min (val x:int, val y:int) : int {
 }
 
 function minOfSquares(val x:int, val y:int) : int {
-    minOfSquares := min(square(x), square(y));
+    minOfSquares := min(squar(x), square(y)); # Lexical error: 'squar' instead of 'square'
 }
 
 function main(val args:[string]) {

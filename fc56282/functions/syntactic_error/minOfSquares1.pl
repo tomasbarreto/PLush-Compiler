@@ -8,13 +8,13 @@ function square(val x:int) : int {
 function min (val x:int, val y:int) : int {
     if x < y {
         min := x;
-    } else  # Syntactic error: missing {
+    } else {
         min := y;
     }
 }
 
 function minOfSquares(val x:int, val y:int) : int {
-    minOfSquares := min(square(x), square(y));
+    minOfSquares := min(square(x), square(y); # Syntactic error: missing )
 }
 
 function main(val args:[string]) {
