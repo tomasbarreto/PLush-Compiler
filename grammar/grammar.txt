@@ -1,0 +1,123 @@
+S -> STATEMENT_FUNCTION_LIST
+
+//////////////////////////////////////////////////////////////////////////////
+// STATEMENTS
+
+STATEMENT_FUNCTION_LIST -> STATEMENT | FUNCTION | STATEMENT STATEMENT_FUNCTION_LIST | FUNCTION STATEMENT_FUNCTION_LIST
+
+STATEMENT -> VARIABLE_DECLARATION | VARIABLE_ASSIGNMENT | IF_STATEMENT | WHILE_STATEMENT
+
+IF_STATEMENT -> if CONDITION { STATEMENT_LIST } | if CONDITION { STATEMENT_LIST } else { STATEMENT_LIST }
+
+WHILE_STATEMENT -> while CONDITION { STATEMENT_LIST }
+
+STATEMENT_LIST -> STATEMENT | STATEMENT STATEMENT_LIST | epsilon
+
+//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+// FUNCTIONS
+
+FUNCTION -> function fName( FUNCTION_DECLARATION_PARAMETERS ) : TYPE { STATEMENT_LIST }
+
+FUNCTION_DECLARATION_PARAMETERS -> FUNCTION_DECLARATION_PARAMETER_LIST | epsilon
+
+FUNCTION_DECLARATION_PARAMETER_LIST -> FUNCTION_PARAMETER | FUNCTION_PARAMETER , FUNCTION_DECLARATION_PARAMETER_LIST
+
+FUNCTION_PARAMETER -> VDECLARATION valName : TYPE
+
+FUNCTION_CALL -> fName( FUNCTION_PARAMETER_LIST )
+
+FUNCTION_PARAMETER_LIST -> parameter | parameter , FUNCTION_PARAMETER_LIST
+
+//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+// VARIABLES
+
+VARIABLE_DECLARATION -> VDECLARATION valName : TYPE := VALUE;
+
+VARIABLE_ASSIGNMENT -> valName := VALUE;
+//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+// CONDITIONS
+
+CONDITION -> OR
+
+OR -> OR || AND | AND
+
+AND -> AND && LOGICAL_TERM | LOGICAL_TERM
+
+LOGICAL_TERM -> COMPARISON | FUNCTION_CALL
+
+COMPARISON -> FUNCTION_CALL COMPARISON_SYMBOL FUNCTION_CALL | MATH_CALC COMPARISON_SYMBOL FUNCTION_CALL | FUNCTION_CALL COMPARISON_SYMBOL MATH_CALC | MATH_CALC COMPARISON_SYMBOL MATH_CALC
+
+//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+// MATH CALCULATIONS 
+
+MATH_CALC -> MINUS
+
+MINUS -> MINUS - SUM | SUM
+
+SUM -> SUM + REST | REST
+
+REST -> REST % DIVISION | DIVISION
+
+DIVISION -> DIVISION / MULTIPLICATION | MULTIPLICATION
+
+MULTIPLICATION -> MULTIPLICATION * TERMINAL | TERMINAL
+
+TERMINAL -> Num | FUNCTION_CALL | FUNCTION_CALL ARRAY_ACCESS | VARIABLE_ACCESS
+
+//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+// MATH CALCULATIONS for arrays (because functions arent allowed when indexing)
+
+ARRAY_MATH_CALC -> ARRAY_MINUS
+
+ARRAY_MINUS -> ARRAY_MINUS - ARRAY_SUM | ARRAY_SUM
+
+ARRAY_SUM -> ARRAY_SUM + ARRAY_REST | ARRAY_REST
+
+ARRAY_REST -> ARRAY_REST % ARRAY_DIVISION | ARRAY_DIVISION
+
+ARRAY_DIVISION -> ARRAY_DIVISION / ARRAY_MULTIPLICATION | ARRAY_MULTIPLICATION
+
+ARRAY_MULTIPLICATION -> ARRAY_MULTIPLICATION * ARRAY_TERMINAL | ARRAY_TERMINAL
+
+ARRAY_TERMINAL -> Num | VARIABLE_ACCESS
+
+//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+// ACCESSES
+
+VARIABLE_ACCESS -> vName | vName ARRAY_ACCESS
+
+ARRAY_ACCESS -> [ ARRAY_MATH_CALC ] | [ ARRAY_MATH_CALC ] ARRAY_ACCESS
+
+//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+// VALUES
+
+VALUE -> vValue | [ VALUE_LIST ] | FUNCTION_CALL | FUNCTION_CALL ARRAY_ACCESS | VARIABLE_ACCESS
+
+VALUE_LIST -> vValue | vValue , VALUE_LIST
+
+//////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////
+// SYMBOLS AND TYPES
+
+COMPARISON_SYMBOL -> = | != | >= | > | <= | <
+
+VDECLARATION -> var | val
+
+TYPE -> double | int | string | void | [TYPE]
+
+//////////////////////////////////////////////////////////////////////////////
