@@ -33,6 +33,8 @@ def parse(tokens):
             VARIABLE_DECLARATION()
         elif lookahead() == 'VNAME':
             VARIABLE_ASSIGNMENT()
+        elif lookahead() == 'IF':
+            IF_STATEMENT()
         else:
             raise ParsingException()
 
@@ -89,12 +91,20 @@ def parse(tokens):
     def VALUE():
         if lookahead() == 'STRING':
             eat('STRING')
+            CONDITIONp()
+            MATH_CALC()
         elif lookahead() == 'NUMBER':
             eat('NUMBER')
+            CONDITIONp()
+            MATH_CALC()
         elif lookahead() == 'BOOLEAN':
             eat('BOOLEAN')
+            CONDITIONp()
+            MATH_CALC()
         elif lookahead() == 'LPAREN':
             ARRAY()
+            CONDITIONp()
+            MATH_CALC()
         else:
             raise ParsingException()
 
@@ -134,6 +144,114 @@ def parse(tokens):
         if lookahead() == 'COMMA':
             eat('COMMA')
             ARRAY_CONTENT()
+        else:
+            pass
+
+    def IF_STATEMENT():
+        if lookahead() == 'IF':
+            eat('IF')
+            CONDITION()
+            eat('LCURLYPAREN')
+            STATEMENT_LIST()
+            eat('RCURLYPAREN')
+            IF_STATEMENTp()
+        else:
+            raise ParsingException()
+        
+    def IF_STATEMENTp():
+        if lookahead() == 'ELSE':
+            eat('ELSE')
+            eat('LCURLYPAREN')
+            STATEMENT_LIST()
+            eat('RCURLYPAREN')
+        else:
+            pass
+
+    def STATEMENT_LIST():
+        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE']:
+            STATEMENT()
+            STATEMENT_LIST()
+        else:
+            pass
+
+    def CONDITION():
+        OR()
+    
+    def OR():
+        AND()
+        if lookahead() == 'OR':
+            eat('OR')
+            AND()
+        else:
+            pass
+
+    def AND():
+        NEG()
+        if lookahead() == 'AND':
+            eat('AND')
+            NEG()
+        else:
+            pass
+    
+    def NEG():
+        if lookahead() == 'NEG':
+            eat('NEG')
+            EQUALITY()
+        else:
+            EQUALITY()
+
+    def EQUALITY():
+        RELATIONAL()
+        if lookahead() == 'EQUALS':
+            eat('EQUALS')
+            RELATIONAL()
+        elif lookahead() == 'NOTEQUALS':
+            eat('NOTEQUALS')
+            RELATIONAL()
+        else:
+            pass
+    
+    def RELATIONAL():
+        ADDITIVE()
+        if lookahead() == 'LOGICOPERATOR':
+            eat('LOGICOPERATOR')
+            ADDITIVE()
+        else:
+            pass
+    
+    def ADDITIVE():
+        MULTIPLICATIVE()
+        if lookahead() == 'ADDICTIONOPERATOR':
+            eat('ADDICTIONOPERATOR')
+            MULTIPLICATIVE()
+        else:
+            pass
+    
+    def MULTIPLICATIVE():
+        TERMINAL()
+        if lookahead() == 'MULTIPLICATIONOPERATOR':
+            eat('MULTIPLICATIONOPERATOR')
+            TERMINAL()
+        else:
+            pass
+        
+    def TERMINAL():
+        VALUE()
+
+    def CONDITIONp():
+        if lookahead() == 'LOGICOPERATOR':
+            eat('LOGICOPERATOR')
+            CONDITION()
+        else:
+            pass
+
+    def MATH_CALC():
+        if lookahead() == 'ADDICTIONOPERATOR':
+            eat('ADDICTIONOPERATOR')
+            ADDITIVE()
+        elif lookahead() == 'MULTIPLICATIONOPERATOR':
+            eat('MULTIPLICATIONOPERATOR')
+            MULTIPLICATIVE()
         else:
             pass
 
