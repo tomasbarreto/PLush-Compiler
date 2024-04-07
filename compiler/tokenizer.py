@@ -11,9 +11,16 @@ TOKEN_TYPES = [
     ('VNAME', r'[a-zA-Z_][a-zA-Z0-9_]*'),
     ('NUMBER', r'\d+(\.\d*)?'),
     ('STRING', r'\".*?\"|\'.*?\''),
+    ('BOOLEAN', r'true|false'),
     ('OPERATOR', r'[\!\&\|\<\>\=\+\-\*\/\%]'),
     ('ASSIGNMENT', r'\:\='),
-    ('SEPARATOR', r'[\{\}\[\];,:]'),  # Modified to remove parentheses
+    ('LPAREN', r'\['),
+    ('RPAREN', r'\]'),
+    ('LCURLYPAREN', r'\{'),
+    ('RCURLYPAREN', r'\}'),
+    ('COMMA', r'\,'),
+    ('SEMICOLON', r'\;'),
+    ('COLON', r'\:'),
     ('WHITESPACE', r'\s+'),
     ('COMMENT', r'\#.*'),  # Single-line comments starting with #
 ]
