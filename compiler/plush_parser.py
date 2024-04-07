@@ -25,6 +25,90 @@ def parse(tokens):
         if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE']:
             STATEMENT()
             STATEMENT_FUNCTION_LISTp()
+        elif lookahead() == 'FUNCTION':
+            FUNCTION()
+            STATEMENT_FUNCTION_LISTp()
+        else:
+            raise ParsingException()
+        
+    def FUNCTION():
+        if lookahead() == 'FUNCTION':
+            eat('FUNCTION')
+            eat('IDENTIFIER')
+            eat('LPAREN')
+            FUNCTION_DECLARATION_PARAMETERS()
+            eat('RPAREN')
+            eat('COLON')
+            TYPE()
+            FUNCTIONp()
+        else:
+            raise ParsingException()
+        
+    def FUNCTIONp():
+        if lookahead() == 'LCURLYPAREN':
+            eat('LCURLYPAREN')
+            FUNCTION_STATEMENT_LIST()
+            eat('RCURLYPAREN')
+        elif lookahead() == 'COMMA':
+            eat('COMMA')
+        else:
+            raise ParsingException()
+        
+    def FUNCTION_DECLARATION_PARAMETERS():
+        if lookahead() in ['VAL', 'VAR']:
+            FUNCTION_DECLARATION_PARAMETER_LIST()
+        else:
+            pass
+    
+    def FUNCTION_DECLARATION_PARAMETER_LIST():
+        if lookahead() in ['VAL', 'VAR']:
+            FUNCTION_PARAMETER()
+            FUNCTION_DECLARATION_PARAMETER_LISTp()
+        else:
+            raise ParsingException()
+        
+    def FUNCTION_PARAMETER():
+        if lookahead() in ['VAL', 'VAR']:
+            VDECLARATION()
+            eat('IDENTIFIER')
+            eat('COLON')
+            TYPE()
+        else:
+            raise ParsingException()
+        
+    def FUNCTION_DECLARATION_PARAMETER_LISTp():
+        if lookahead() == 'COMMA':
+            eat('COMMA')
+            FUNCTION_DECLARATION_PARAMETER_LIST()
+        else:
+            pass
+
+    def FUNCTION_STATEMENT_LIST():
+        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'RETURN']:
+            FUNCTION_STATEMENT()
+            FUNCTION_STATEMENT_LIST()
+        else:
+            pass
+    
+    def FUNCTION_STATEMENT():
+        if lookahead() in ['VAR', 'VAL']:
+            VARIABLE_DECLARATION()
+        elif lookahead() == 'IDENTIFIER':
+            VARIABLE_ASSIGNMENT()
+        elif lookahead() == 'IF':
+            IF_STATEMENT()
+        elif lookahead() == 'WHILE':
+            WHILE()
+        elif lookahead() == 'RETURN':
+            RETURN()
+        else:
+            raise ParsingException()
+    
+    def RETURN():
+        if lookahead() == 'RETURN':
+            eat('RETURN')
+            VALUE()
+            eat('SEMICOLON')
         else:
             raise ParsingException()
 
@@ -41,8 +125,10 @@ def parse(tokens):
             raise ParsingException()
 
     def STATEMENT_FUNCTION_LISTp():
-        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE']:
+        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'FUNCTION']:
             STATEMENT_FUNCTION_LIST()
+        if lookahead() == 'RETURN':
+            raise
         else:
             pass
 
@@ -230,7 +316,7 @@ def parse(tokens):
             raise ParsingException()
 
     def STATEMENT_LIST():
-        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE']:
+        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'IDENTIFIER']:
             STATEMENT()
             STATEMENT_LIST()
         else:
