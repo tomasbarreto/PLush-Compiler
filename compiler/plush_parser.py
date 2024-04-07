@@ -35,6 +35,8 @@ def parse(tokens):
             VARIABLE_ASSIGNMENT()
         elif lookahead() == 'IF':
             IF_STATEMENT()
+        elif lookahead() == 'WHILE':
+            WHILE()
         else:
             raise ParsingException()
 
@@ -166,6 +168,16 @@ def parse(tokens):
             eat('RCURLYPAREN')
         else:
             pass
+
+    def WHILE():
+        if lookahead() == 'WHILE':
+            eat('WHILE')
+            CONDITION()
+            eat('LCURLYPAREN')
+            STATEMENT_LIST()
+            eat('RCURLYPAREN')
+        else:
+            raise ParsingException()
 
     def STATEMENT_LIST():
         if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE']:
