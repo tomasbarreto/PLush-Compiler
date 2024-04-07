@@ -7,14 +7,15 @@ TOKEN_TYPES = [
     ('THEN', r'then'),
     ('ELSE', r'else'),
     ('WHILE', r'while'),
+    ('TYPE', r'double|int|string|void'),
     ('VNAME', r'[a-zA-Z_][a-zA-Z0-9_]*'),
     ('NUMBER', r'\d+(\.\d*)?'),
     ('STRING', r'\".*?\"|\'.*?\''),
     ('OPERATOR', r'[\!\&\|\<\>\=\+\-\*\/\%]'),
     ('ASSIGNMENT', r'\:\='),
-    ('SEPARATOR', r'[\{\}\[\];,]'),  # Modified to remove parentheses
+    ('SEPARATOR', r'[\{\}\[\];,:]'),  # Modified to remove parentheses
     ('WHITESPACE', r'\s+'),
-    ('COMMENT', r'\#.*')  # Single-line comments starting with #
+    ('COMMENT', r'\#.*'),  # Single-line comments starting with #
 ]
 
 def tokenize(source_code):
