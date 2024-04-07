@@ -9,7 +9,9 @@ STATEMENT_FUNCTION_LIST' -> STATEMENT_FUNCTION_LIST | epsilon
 
 STATEMENT -> VARIABLE_DECLARATION | VARIABLE_ASSIGNMENT | IF_STATEMENT | WHILE_STATEMENT
 
-IF_STATEMENT -> if CONDITION { STATEMENT_LIST } | if CONDITION { STATEMENT_LIST } else { STATEMENT_LIST }
+IF_STATEMENT -> if CONDITION { STATEMENT_LIST } IF_STATEMENTp
+
+IF_STATEMENTp -> else { STATEMENT_LIST } | epsilon
 
 WHILE_STATEMENT -> while CONDITION { STATEMENT_LIST }
 
@@ -47,40 +49,25 @@ VARIABLE_ASSIGNMENT -> valName := VALUE;
 //////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////
-// CONDITIONS
+// OPERANDS
 
 CONDITION -> OR
 
-OR -> OR || AND | AND
+OR -> AND || AND | AND
 
-AND -> AND && LOGICAL_TERM | LOGICAL_TERM
+AND -> NEG && NEG | NEG
 
-LOGICAL_TERM -> COMPARISON | FUNCTION_CALL
+NEG -> !EQUALITY | EQUALITY
 
-COMPARISON -> FUNCTION_CALL COMPARISON_SYMBOL COMPARISON' | MATH_CALC COMPARISON_SYMBOL COMPARISON'
+EQUALITY -> RELATIONAL EQUALITY_SYMBOL RELATIONAL | RELATIONAL
 
-COMPARISON' -> FUNCTION_CALL | MATH_CALC
+RELATIONAL -> ADDICTIVE RELATIONAL_SYMBOL ADDICTIVE | ADDICTIVE
 
-//////////////////////////////////////////////////////////////////////////////
+ADDICTIVE -> MULT ADDICTION_SYMBOL MULT | MULT
 
-//////////////////////////////////////////////////////////////////////////////
-// MATH CALCULATIONS 
+MULT -> TERMINAL MULT_SYMBOL TERMINAL | TERMINAL
 
-MATH_CALC -> MINUS
-
-MINUS -> MINUS - SUM | SUM
-
-SUM -> SUM + REST | REST
-
-REST -> REST % DIVISION | DIVISION
-
-DIVISION -> DIVISION / MULTIPLICATION | MULTIPLICATION
-
-MULTIPLICATION -> MULTIPLICATION * TERMINAL | TERMINAL
-
-TERMINAL -> Num | FUNCTION_CALL TERMINAL' | VARIABLE_ACCESS
-
-TERMINAL' -> ARRAY_ACCESS | epsilon
+TERMINAL -> VALUE
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -119,9 +106,9 @@ ARRAY_ACCESS' -> ARRAY_ACCESS | epsilon
 //////////////////////////////////////////////////////////////////////////////
 // VALUES
 
-VALUE -> vValue | ARRAY | FUNCTION_CALL VALUE' | VARIABLE_ACCESS
+VALUE -> vValue CONDITION' MATH_CALC | ARRAY CONDITION' MATH_CALC | FUNCTION_CALL VALUE' | VARIABLE_ACCESS CONDITION' MATH_CALC
 
-VALUE' -> ARRAY_ACCESS | epsilon
+VALUE' -> ARRAY_ACCESS CONDITION' MATH_CALC | epsilon
 
 ARRAY -> [ ARRAY_ CONTENT ]
 
@@ -133,12 +120,22 @@ VALUE_LIST' -> , VALUE_LIST | epsilon
 
 VALUE_LIST'' -> , ARRAY_CONTENT | epsilon
 
+CONDITION' -> CONDITION | epsilon
+
+MATH_CALC -> ADDICTIVE | epsilon
+
 //////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////
 // SYMBOLS AND TYPES
 
-COMPARISON_SYMBOL -> = | != | >= | > | <= | <
+EQUALITY_SYMBOL -> = | !=
+
+RELATIONAL_SYMBOL -> >= | > | <= | <
+
+ADDICTION_SYMBOL -> + | -
+
+MULT_SYMBOL -> * | / | %
 
 VDECLARATION -> var | val
 
