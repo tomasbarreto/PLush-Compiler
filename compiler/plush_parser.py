@@ -31,7 +31,7 @@ def parse(tokens):
     def STATEMENT():
         if lookahead() in ['VAR', 'VAL']:
             VARIABLE_DECLARATION()
-        elif lookahead() == 'VNAME':
+        elif lookahead() == 'IDENTIFIER':
             VARIABLE_ASSIGNMENT()
         elif lookahead() == 'IF':
             IF_STATEMENT()
@@ -49,7 +49,7 @@ def parse(tokens):
     def VARIABLE_DECLARATION():
         if lookahead() in ['VAR', 'VAL']:
             VDECLARATION()
-            eat('VNAME')
+            eat('IDENTIFIER')
             eat('COLON')
             TYPE()
             eat('ASSIGNMENT')
@@ -59,8 +59,8 @@ def parse(tokens):
             raise ParsingException()
 
     def VARIABLE_ASSIGNMENT():
-        if lookahead() == 'VNAME':
-            eat('VNAME')
+        if lookahead() == 'IDENTIFIER':
+            eat('IDENTIFIER')
             eat('ASSIGNMENT')
             VALUE()
             eat('SEMICOLON')
@@ -78,14 +78,14 @@ def parse(tokens):
     def TYPE():
         if lookahead() == 'TYPE':
             eat('TYPE')
-        elif lookahead() == 'LPAREN':
+        elif lookahead() == 'LRECPAREN':
             i = 0
-            while lookahead() == 'LPAREN':
-                eat('LPAREN')
+            while lookahead() == 'LRECPAREN':
+                eat('LRECPAREN')
                 i += 1
             TYPE()
             while i > 0:
-                eat('RPAREN')
+                eat('RRECPAREN')
                 i -= 1
         else:
             raise ParsingException()
@@ -103,24 +103,74 @@ def parse(tokens):
             eat('BOOLEAN')
             CONDITIONp()
             MATH_CALC()
-        elif lookahead() == 'LPAREN':
+        elif lookahead() == 'LRECPAREN':
             ARRAY()
+            CONDITIONp()
+            MATH_CALC()
+        elif lookahead() == 'IDENTIFIER':
+            eat('IDENTIFIER')
+            FUNCTION_CALL()
+            VALUEp()
             CONDITIONp()
             MATH_CALC()
         else:
             raise ParsingException()
-
         
-    def ARRAY():
+    def VALUEp():
+        if lookahead() == 'LRECPAREN':
+            ARRAY_ACCESS()
+            CONDITIONp()
+            MATH_CALC()
+        else:
+            pass
+    
+    def ARRAY_ACCESS():
+        if lookahead() == 'LRECPAREN':
+            eat('LRECPAREN')
+            VALUE()
+            eat('RRECPAREN')
+            ARRAY_ACCESSp()
+        else:
+            raise ParsingException()
+        
+    def ARRAY_ACCESSp():
+        if lookahead() == 'LRECPAREN':
+            ARRAY_ACCESS()
+        else:
+            pass
+
+    def FUNCTION_CALL():
         if lookahead() == 'LPAREN':
             eat('LPAREN')
-            ARRAY_CONTENT()
+            FUNCTION_PARAMETER_LIST()
             eat('RPAREN')
+        else:
+            pass
+
+    def FUNCTION_PARAMETER_LIST():
+        if lookahead() in ['STRING', 'NUMBER', 'BOOLEAN', 'LRECPAREN', 'IDENTIFIER']:
+            VALUE()
+            FUNCTION_PARAMETER_LISTp()
+        else:
+            pass
+    
+    def FUNCTION_PARAMETER_LISTp():
+        if lookahead() == 'COMMA':
+            eat('COMMA')
+            FUNCTION_PARAMETER_LIST()
+        else:
+            pass
+        
+    def ARRAY():
+        if lookahead() == 'LRECPAREN':
+            eat('LRECPAREN')
+            ARRAY_CONTENT()
+            eat('RRECPAREN')
         else:
             raise ParsingException()
         
     def ARRAY_CONTENT():
-        if lookahead() == 'RPAREN':
+        if lookahead() == 'RRECPAREN':
             pass
         else:
             VALUE_LIST()
@@ -129,7 +179,7 @@ def parse(tokens):
         if lookahead() in ['STRING', 'NUMBER', 'BOOLEAN']:
             VALUE()
             VALUE_LISTp()
-        elif lookahead() == 'LPAREN':
+        elif lookahead() == 'LRECPAREN':
             ARRAY()
             VALUE_LISTp2()
         else:
