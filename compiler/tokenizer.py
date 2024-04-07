@@ -11,6 +11,7 @@ TOKEN_TYPES = [
     ('NUMBER', r'\d+(\.\d*)?'),
     ('STRING', r'\".*?\"|\'.*?\''),
     ('OPERATOR', r'[\!\&\|\<\>\=\+\-\*\/\%]'),
+    ('ASSIGNMENT', r'\:\='),
     ('SEPARATOR', r'[\{\}\[\];,]'),  # Modified to remove parentheses
     ('WHITESPACE', r'\s+'),
     ('COMMENT', r'\#.*')  # Single-line comments starting with #
