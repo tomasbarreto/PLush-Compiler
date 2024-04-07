@@ -6,6 +6,8 @@ TOKEN_TYPES = [
     ('IF', r'if'),
     ('ELSE', r'else'),
     ('WHILE', r'while'),
+    ('FUNCTION', r'function'),
+    ('RETURN', r'return'),
     ('TYPE', r'double|int|string|void'),
     ('BOOLEAN', r'true|false'),
     ('IDENTIFIER', r'[a-zA-Z_][a-zA-Z0-9_]*'),
@@ -26,7 +28,7 @@ TOKEN_TYPES = [
     ('SEMICOLON', r'\;'),
     ('COLON', r'\:'),
     ('WHITESPACE', r'\s+'),
-    ('COMMENT', r'\#.*'),  # Single-line comments starting with #
+    ('COMMENT', r'\#.*'),
 ]
 
 def tokenize(source_code):
