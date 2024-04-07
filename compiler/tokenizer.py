@@ -8,7 +8,7 @@ TOKEN_TYPES = [
     ('WHILE', r'while'),
     ('FUNCTION', r'function'),
     ('RETURN', r'return'),
-    ('TYPE', r'double|int|string|void'),
+    ('TYPE', r'double|int|bool|string|void'),
     ('BOOLEAN', r'true|false'),
     ('IDENTIFIER', r'[a-zA-Z_][a-zA-Z0-9_]*'),
     ('NUMBER', r'\d+(\.\d*)?'),
