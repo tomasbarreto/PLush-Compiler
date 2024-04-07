@@ -119,19 +119,19 @@ ARRAY_ACCESS' -> ARRAY_ACCESS | epsilon
 //////////////////////////////////////////////////////////////////////////////
 // VALUES
 
-VALUE -> vValue | [ ARRAY ] | FUNCTION_CALL VALUE' | VARIABLE_ACCESS
+VALUE -> vValue | ARRAY | FUNCTION_CALL VALUE' | VARIABLE_ACCESS
 
 VALUE' -> ARRAY_ACCESS | epsilon
 
-ARRAY -> ARRAY_LIST | ARRAY , ARRAY | [ ARRAY ]
+ARRAY -> [ ARRAY_ CONTENT ]
 
-ARRAY_LIST -> VALUE_LIST ARRAY_LIST'
+ARRAY_CONTENT -> VALUE_LIST | epsilon
 
-ARRAY_LIST' -> , ARRAY_LIST | epsilon
-
-VALUE_LIST -> vValue VALUE_LIST'
+VALUE_LIST -> vValue VALUE_LIST' | ARRAY VALUE_LIST''
 
 VALUE_LIST' -> , VALUE_LIST | epsilon
+
+VALUE_LIST'' -> , ARRAY_CONTENT | epsilon
 
 //////////////////////////////////////////////////////////////////////////////
 
