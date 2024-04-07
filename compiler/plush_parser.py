@@ -116,11 +116,28 @@ def parse(tokens):
         if lookahead() in ['VAR', 'VAL']:
             VARIABLE_DECLARATION()
         elif lookahead() == 'IDENTIFIER':
-            VARIABLE_ASSIGNMENT()
+            IDENTIFIER_ACCESS()
         elif lookahead() == 'IF':
             IF_STATEMENT()
         elif lookahead() == 'WHILE':
             WHILE()
+        else:
+            raise ParsingException()
+        
+    def IDENTIFIER_ACCESS():
+        if lookahead() == 'IDENTIFIER':
+            eat('IDENTIFIER')
+            IDENTIFIER_ACCESSp()
+        else:
+            raise ParsingException()
+        
+    def IDENTIFIER_ACCESSp():
+        if lookahead() == 'ASSIGNMENT':
+            eat('ASSIGNMENT')
+            VALUE()
+            eat('SEMICOLON')
+        elif lookahead() == 'LPAREN':
+            FUNCTION_CALL()
         else:
             raise ParsingException()
 
@@ -230,6 +247,7 @@ def parse(tokens):
             eat('LPAREN')
             FUNCTION_PARAMETER_LIST()
             eat('RPAREN')
+            eat('SEMICOLON')
         else:
             pass
 
@@ -404,3 +422,5 @@ def parse(tokens):
             pass
 
     S()
+
+    print("\nPARSING SUCCESSFUL!")
