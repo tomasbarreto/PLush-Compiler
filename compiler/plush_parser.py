@@ -218,6 +218,8 @@ def parse(tokens):
             eat('IDENTIFIER')
             FUNCTION_CALL()
             VALUEp()
+            CONDITIONp()
+            MATH_CALC()
         else:
             raise ParsingException()
         
