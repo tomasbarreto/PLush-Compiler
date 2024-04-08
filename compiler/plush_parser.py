@@ -344,65 +344,63 @@ def parse(tokens):
             pass
 
     def CONDITION():
-        OR()
+        MULTIPLICATIVE()
     
-    def OR():
-        AND()
-        if lookahead() == 'OR':
-            eat('OR')
-            AND()
+    def MULTIPLICATIVE():
+        ADDITIVE()
+        if lookahead() == 'MULTIPLICATIONOPERATOR':
+            eat('MULTIPLICATIONOPERATOR')
+            ADDITIVE()
         else:
             pass
 
-    def AND():
-        NEG()
-        if lookahead() == 'AND':
-            eat('AND')
-            NEG()
-        else:
-            pass
-    
-    def NEG():
-        if lookahead() == 'NEG':
-            eat('NEG')
-            EQUALITY()
-        else:
-            EQUALITY()
-
-    def EQUALITY():
+    def ADDITIVE():
         RELATIONAL()
-        if lookahead() == 'EQUALS':
-            eat('EQUALS')
-            RELATIONAL()
-        elif lookahead() == 'NOTEQUALS':
-            eat('NOTEQUALS')
+        if lookahead() == 'ADDICTION_SYMBOL':
+            eat('ADDICTION_SYMBOL')
             RELATIONAL()
         else:
             pass
     
     def RELATIONAL():
-        ADDITIVE()
+        EQUALITY()
+        if lookahead() == 'COMPAREOPERATOR':
+            eat('COMPAREOPERATOR')
+            EQUALITY()
+        else:
+            pass
+
+    def EQUALITY():
+        NEG()
+        if lookahead() == 'EQUALITYOPERATOR':
+            eat('EQUALITYOPERATOR')
+            NEG()
+        else:
+            pass
+
+    def NEG():
+        if lookahead() == 'NEG':
+            eat('NEG')
+            AND()
+        else:
+            AND()
+
+    def AND():
+        OR()
         if lookahead() == 'LOGICOPERATOR':
             eat('LOGICOPERATOR')
-            ADDITIVE()
+            OR()
         else:
             pass
-    
-    def ADDITIVE():
-        MULTIPLICATIVE()
-        if lookahead() == 'ADDICTIONOPERATOR':
-            eat('ADDICTIONOPERATOR')
-            MULTIPLICATIVE()
-        else:
-            pass
-    
-    def MULTIPLICATIVE():
+
+    def OR():
         TERMINAL()
-        if lookahead() == 'MULTIPLICATIONOPERATOR':
-            eat('MULTIPLICATIONOPERATOR')
+        if lookahead() == 'LOGICOPERATOR':
+            eat('LOGICOPERATOR')
             TERMINAL()
         else:
             pass
+    
         
     def TERMINAL():
         VALUE()
@@ -410,6 +408,12 @@ def parse(tokens):
     def CONDITIONp():
         if lookahead() == 'LOGICOPERATOR':
             eat('LOGICOPERATOR')
+            CONDITION()
+        elif lookahead() == 'COMPAREOPERATOR':
+            eat('COMPAREOPERATOR')
+            CONDITION()
+        elif lookahead() == 'EQUALITYOPERATOR':
+            eat('EQUALITYOPERATOR')
             CONDITION()
         else:
             pass
