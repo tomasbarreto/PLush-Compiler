@@ -191,14 +191,9 @@ def parse(tokens):
         if lookahead() == 'TYPE':
             eat('TYPE')
         elif lookahead() == 'LRECPAREN':
-            i = 0
-            while lookahead() == 'LRECPAREN':
-                eat('LRECPAREN')
-                i += 1
+            eat('LRECPAREN')
             TYPE()
-            while i > 0:
-                eat('RRECPAREN')
-                i -= 1
+            eat('RRECPAREN')
         else:
             raise ParsingException()
 
