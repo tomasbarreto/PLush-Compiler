@@ -22,7 +22,7 @@ def parse(tokens):
         STATEMENT_FUNCTION_LIST()
 
     def STATEMENT_FUNCTION_LIST():
-        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE']:
+        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'IDENTIFIER']:
             STATEMENT()
             STATEMENT_FUNCTION_LISTp()
         elif lookahead() == 'FUNCTION':
@@ -137,12 +137,21 @@ def parse(tokens):
             VALUE()
             eat('SEMICOLON')
         elif lookahead() == 'LPAREN':
-            FUNCTION_CALL()
+            PROCEDURE_CALL()
+        else:
+            raise ParsingException()
+
+    def PROCEDURE_CALL():
+        if lookahead() == 'LPAREN':
+            eat('LPAREN')
+            FUNCTION_PARAMETER_LIST()
+            eat('RPAREN')
+            eat('SEMICOLON')
         else:
             raise ParsingException()
 
     def STATEMENT_FUNCTION_LISTp():
-        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'FUNCTION']:
+        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'FUNCTION', 'IDENTIFIER']:
             STATEMENT_FUNCTION_LIST()
         if lookahead() == 'RETURN':
             raise
@@ -214,8 +223,6 @@ def parse(tokens):
             eat('IDENTIFIER')
             FUNCTION_CALL()
             VALUEp()
-            CONDITIONp()
-            MATH_CALC()
         else:
             raise ParsingException()
         
@@ -247,7 +254,6 @@ def parse(tokens):
             eat('LPAREN')
             FUNCTION_PARAMETER_LIST()
             eat('RPAREN')
-            eat('SEMICOLON')
         else:
             pass
 
