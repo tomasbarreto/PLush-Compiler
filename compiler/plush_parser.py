@@ -196,8 +196,15 @@ def parse(tokens):
             eat('RRECPAREN')
         else:
             raise ParsingException()
-
+        
     def VALUE():
+        if lookahead() == 'SUBTRACTIONOPERATOR':
+            eat('SUBTRACTIONOPERATOR')
+            VALUEp()
+        else:
+            VALUEp()
+
+    def VALUEp():
         if lookahead() == 'STRING':
             eat('STRING')
             CONDITIONp()
@@ -217,13 +224,13 @@ def parse(tokens):
         elif lookahead() == 'IDENTIFIER':
             eat('IDENTIFIER')
             FUNCTION_CALL()
-            VALUEp()
+            VALUEpp()
             CONDITIONp()
             MATH_CALC()
         else:
             raise ParsingException()
         
-    def VALUEp():
+    def VALUEpp():
         if lookahead() == 'LRECPAREN':
             ARRAY_ACCESS()
             CONDITIONp()
@@ -356,8 +363,11 @@ def parse(tokens):
 
     def ADDITIVE():
         RELATIONAL()
-        if lookahead() == 'ADDICTION_SYMBOL':
-            eat('ADDICTION_SYMBOL')
+        if lookahead() == 'ADDICTIONOPERATOR':
+            eat('ADDICTIONOPERATOR')
+            RELATIONAL()
+        elif lookahead() == 'SUBTRACTIONOPERATOR':
+            eat('SUBTRACTIONOPERATOR')
             RELATIONAL()
         else:
             pass
@@ -403,7 +413,12 @@ def parse(tokens):
     
         
     def TERMINAL():
-        VALUE()
+        if lookahead() == 'LPAREN':
+            eat('LPAREN')
+            VALUE()
+            eat('RPAREN')
+        else:
+            VALUE()
 
     def CONDITIONp():
         if lookahead() == 'LOGICOPERATOR':
