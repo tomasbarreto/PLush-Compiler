@@ -208,25 +208,20 @@ def parse(tokens):
         if lookahead() == 'STRING':
             eat('STRING')
             CONDITIONp()
-            MATH_CALC()
         elif lookahead() == 'NUMBER':
             eat('NUMBER')
             CONDITIONp()
-            MATH_CALC()
         elif lookahead() == 'BOOLEAN':
             eat('BOOLEAN')
             CONDITIONp()
-            MATH_CALC()
         elif lookahead() == 'LRECPAREN':
             ARRAY()
             CONDITIONp()
-            MATH_CALC()
         elif lookahead() == 'IDENTIFIER':
             eat('IDENTIFIER')
             FUNCTION_CALL()
             VALUEpp()
             CONDITIONp()
-            MATH_CALC()
         else:
             raise ParsingException()
         
@@ -234,7 +229,6 @@ def parse(tokens):
         if lookahead() == 'LRECPAREN':
             ARRAY_ACCESS()
             CONDITIONp()
-            MATH_CALC()
         else:
             pass
     
@@ -430,16 +424,15 @@ def parse(tokens):
         elif lookahead() == 'EQUALITYOPERATOR':
             eat('EQUALITYOPERATOR')
             CONDITION()
-        else:
-            pass
-
-    def MATH_CALC():
-        if lookahead() == 'ADDICTIONOPERATOR':
+        elif lookahead() == 'ADDICTIONOPERATOR':
             eat('ADDICTIONOPERATOR')
-            ADDITIVE()
+            CONDITION()
+        elif lookahead() == 'SUBTRACTIONOPERATOR':
+            eat('SUBTRACTIONOPERATOR')
+            CONDITION()
         elif lookahead() == 'MULTIPLICATIONOPERATOR':
             eat('MULTIPLICATIONOPERATOR')
-            MULTIPLICATIVE()
+            CONDITION()
         else:
             pass
 
