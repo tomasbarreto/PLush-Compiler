@@ -1,3 +1,5 @@
+from plush_ast import *
+
 class ParsingException(Exception):
     pass
 
@@ -19,17 +21,20 @@ def parse(tokens):
             raise ParsingException()
         
     def S():
-        STATEMENT_FUNCTION_LIST()
+        return Program(STATEMENT_FUNCTION_LIST())
 
-    def STATEMENT_FUNCTION_LIST():
+    def STATEMENT_FUNCTION_LIST(result = list()):
+
         if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'IDENTIFIER']:
-            STATEMENT()
-            STATEMENT_FUNCTION_LISTp()
+            result.append(STATEMENT())
+            STATEMENT_FUNCTION_LISTp(result)
         elif lookahead() == 'FUNCTION':
-            FUNCTION()
-            STATEMENT_FUNCTION_LISTp()
+            result.append(FUNCTION())
+            STATEMENT_FUNCTION_LISTp(result)
         else:
             raise ParsingException()
+        
+        return result
         
     def FUNCTION():
         if lookahead() == 'FUNCTION':
@@ -114,30 +119,35 @@ def parse(tokens):
 
     def STATEMENT():
         if lookahead() in ['VAR', 'VAL']:
-            VARIABLE_DECLARATION()
+            return VARIABLE_DECLARATION()
         elif lookahead() == 'IDENTIFIER':
-            IDENTIFIER_ACCESS()
+            return IDENTIFIER_ACCESS()
         elif lookahead() == 'IF':
-            IF_STATEMENT()
+            return IF_STATEMENT()
         elif lookahead() == 'WHILE':
-            WHILE()
+            return WHILE()
         else:
             raise ParsingException()
         
     def IDENTIFIER_ACCESS():
         if lookahead() == 'IDENTIFIER':
-            eat('IDENTIFIER')
-            IDENTIFIER_ACCESSp()
+            name = eat('IDENTIFIER')
+            return IDENTIFIER_ACCESSp(name)
         else:
             raise ParsingException()
         
-    def IDENTIFIER_ACCESSp():
+    def IDENTIFIER_ACCESSp(name):
         if lookahead() == 'ASSIGNMENT':
             eat('ASSIGNMENT')
-            VALUE()
+            value = VALUE()
             eat('SEMICOLON')
+
+            return Assignment(
+                name = name[1],
+                value = value
+            )
         elif lookahead() == 'LPAREN':
-            PROCEDURE_CALL()
+            return PROCEDURE_CALL(name)
         elif lookahead() == 'LRECPAREN':
             ARRAY_ACCESS()
             eat('ASSIGNMENT')
@@ -146,18 +156,23 @@ def parse(tokens):
         else:
             raise ParsingException()
 
-    def PROCEDURE_CALL():
+    def PROCEDURE_CALL(name):
         if lookahead() == 'LPAREN':
             eat('LPAREN')
-            FUNCTION_PARAMETER_LIST()
+            arguments = FUNCTION_PARAMETER_LIST()
             eat('RPAREN')
             eat('SEMICOLON')
+
+            return ProcedureCall(
+                name = name[1],
+                arguments = arguments
+            )
         else:
             raise ParsingException()
 
-    def STATEMENT_FUNCTION_LISTp():
+    def STATEMENT_FUNCTION_LISTp(result):
         if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'FUNCTION', 'IDENTIFIER']:
-            STATEMENT_FUNCTION_LIST()
+            STATEMENT_FUNCTION_LIST(result)
         if lookahead() == 'RETURN':
             raise
         else:
@@ -165,22 +180,21 @@ def parse(tokens):
 
     def VARIABLE_DECLARATION():
         if lookahead() in ['VAR', 'VAL']:
+            declaration_type = lookahead()
             VDECLARATION()
-            eat('IDENTIFIER')
+            name = eat('IDENTIFIER')
             eat('COLON')
-            TYPE()
+            type = TYPE()
             eat('ASSIGNMENT')
-            VALUE()
+            value = VALUE()
             eat('SEMICOLON')
-        else:
-            raise ParsingException()
 
-    def VARIABLE_ASSIGNMENT():
-        if lookahead() == 'IDENTIFIER':
-            eat('IDENTIFIER')
-            eat('ASSIGNMENT')
-            VALUE()
-            eat('SEMICOLON')
+            return VariableDeclaration(
+                declaration_type = declaration_type,
+                name = name[1],
+                type = type,
+                value = value
+            )
         else:
             raise ParsingException()
 
@@ -194,11 +208,15 @@ def parse(tokens):
 
     def TYPE():
         if lookahead() == 'TYPE':
-            eat('TYPE')
+            return eat('TYPE')[1]
         elif lookahead() == 'LRECPAREN':
             eat('LRECPAREN')
-            TYPE()
+            type = TYPE()
             eat('RRECPAREN')
+
+            return ArrayType(
+                type = type
+            )
         else:
             raise ParsingException()
         
@@ -261,11 +279,15 @@ def parse(tokens):
             pass
 
     def FUNCTION_PARAMETER_LIST():
+        arguments = list()
+
         if lookahead() in ['STRING', 'NUMBER', 'BOOLEAN', 'LRECPAREN', 'IDENTIFIER']:
-            VALUE()
+            arguments.append(Argument(VALUE()))
             FUNCTION_PARAMETER_LISTp()
         else:
             pass
+
+        return ArgumentList(arguments)
     
     def FUNCTION_PARAMETER_LISTp():
         if lookahead() == 'COMMA':
@@ -441,6 +463,8 @@ def parse(tokens):
         else:
             pass
 
-    S()
+    ast = S()
 
     print("\nPARSING SUCCESSFUL!")
+
+    print(ast)
