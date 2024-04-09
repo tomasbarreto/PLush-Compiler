@@ -79,7 +79,7 @@ AND  -> OR && OR | OR
 
 OR -> TERMINAL || TERMINAL | TERMINAL
 
-TERMINAL -> VALUE
+TERMINAL -> ( VALUE ) | VALUE
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -117,10 +117,11 @@ ARRAY_ACCESS' -> ARRAY_ACCESS | epsilon
 
 //////////////////////////////////////////////////////////////////////////////
 // VALUES
+VALUE -> - VALUE | VALUE
 
-VALUE -> vValue CONDITION' MATH_CALC | ARRAY CONDITION' MATH_CALC | IDENTIFIER_ACCESS FUNCTION_CALL VALUE' CONDITION' MATH_CALC
+VALUE' -> vValue CONDITION' MATH_CALC | ARRAY CONDITION' MATH_CALC | IDENTIFIER_ACCESS FUNCTION_CALL VALUE'' CONDITION' MATH_CALC
 
-VALUE' -> ARRAY_ACCESS CONDITION' MATH_CALC | epsilon
+VALUE'' -> ARRAY_ACCESS CONDITION' MATH_CALC | epsilon
 
 ARRAY -> [ ARRAY_CONTENT ]
 
