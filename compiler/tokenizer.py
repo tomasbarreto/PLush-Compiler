@@ -11,7 +11,7 @@ TOKEN_TYPES = [
     ('TYPE', r'double|int|bool|string|void'),
     ('BOOLEAN', r'true|false'),
     ('IDENTIFIER', r'[a-zA-Z_][a-zA-Z0-9_]*'),
-    ('NUMBER', r'\d+(\.\d*)?'),
+    ('NUMBER', r'\d+(\.\d+)?|(\d)?+(\.\d+)'),
     ('STRING', r'\".*?\"|\'.*?\''),
     ('NEG', r'\!'),
     ('EQUALITYOPERATOR', r'\=|\!\='),
