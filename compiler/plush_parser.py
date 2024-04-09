@@ -84,7 +84,7 @@ def parse(tokens):
             pass
 
     def FUNCTION_STATEMENT_LIST():
-        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'RETURN']:
+        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'RETURN', 'IDENTIFIER']:
             FUNCTION_STATEMENT()
             FUNCTION_STATEMENT_LIST()
         else:
@@ -94,7 +94,7 @@ def parse(tokens):
         if lookahead() in ['VAR', 'VAL']:
             VARIABLE_DECLARATION()
         elif lookahead() == 'IDENTIFIER':
-            VARIABLE_ASSIGNMENT()
+            IDENTIFIER_ACCESS()
         elif lookahead() == 'IF':
             IF_STATEMENT()
         elif lookahead() == 'WHILE':
@@ -138,6 +138,11 @@ def parse(tokens):
             eat('SEMICOLON')
         elif lookahead() == 'LPAREN':
             PROCEDURE_CALL()
+        elif lookahead() == 'LRECPAREN':
+            ARRAY_ACCESS()
+            eat('ASSIGNMENT')
+            VALUE()
+            eat('SEMICOLON')
         else:
             raise ParsingException()
 
