@@ -142,17 +142,23 @@ def parse(tokens):
             value = VALUE()
             eat('SEMICOLON')
 
-            return Assignment(
+            return VariableAssignment(
                 name = name[1],
                 value = value
             )
         elif lookahead() == 'LPAREN':
             return PROCEDURE_CALL(name)
         elif lookahead() == 'LRECPAREN':
-            ARRAY_ACCESS()
+            indexes = ARRAY_ACCESS()
             eat('ASSIGNMENT')
-            VALUE()
+            value = VALUE()
             eat('SEMICOLON')
+
+            return ArrayVariableAssigment(
+                name = name[1],
+                indexes = indexes,
+                value = value
+            )
         else:
             raise ParsingException()
 
@@ -255,18 +261,21 @@ def parse(tokens):
         else:
             pass
     
-    def ARRAY_ACCESS():
+    def ARRAY_ACCESS(indexes = list()):
         if lookahead() == 'LRECPAREN':
             eat('LRECPAREN')
-            VALUE()
+            value = VALUE()
+            indexes.append(Index(value))
             eat('RRECPAREN')
-            ARRAY_ACCESSp()
+            ARRAY_ACCESSp(indexes)
         else:
             raise ParsingException()
         
-    def ARRAY_ACCESSp():
+        return IndexList(indexes)
+        
+    def ARRAY_ACCESSp(indexes):
         if lookahead() == 'LRECPAREN':
-            ARRAY_ACCESS()
+            ARRAY_ACCESS(indexes)
         else:
             pass
 
