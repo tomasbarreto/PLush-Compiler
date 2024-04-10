@@ -9,7 +9,18 @@ class Program:
         if self.statements is None:
             return "Program()"
         
-        return f"Program({', '.join([str(statement) for statement in self.statements])})"
+        return f"Program({self.statements})"
+    
+@dataclass
+class InstructionList:
+    def __init__ (self, instructions):
+        self.instructions = instructions
+
+    def __repr__(self) -> str:
+        if self.instructions is None:
+            return "InstructionList()"
+        return f"InstructionList({', '.join([str(instruction) for instruction in self.instructions])})"
+
 
 @dataclass
 class IfStatement:

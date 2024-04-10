@@ -34,7 +34,7 @@ def parse(tokens):
         else:
             raise ParsingException()
         
-        return result
+        return InstructionList(result)
         
     def FUNCTION():
         if lookahead() == 'FUNCTION':
