@@ -30,6 +30,8 @@ class IfStatement:
         self.else_block = else_block
 
     def __repr__(self) -> str:
+        if str(self.else_block) == "ElseBlock()":
+            return f"IfStatement({self.condition}, {self.then_block})"
         return f"IfStatement({self.condition}, {self.then_block}, {self.else_block})"
 
 @dataclass
@@ -54,12 +56,12 @@ class ElseBlock:
 
 @dataclass
 class WhileStatement:
-    def __init__ (self, condition, code):
+    def __init__ (self, condition, code_block):
         self.condition = condition
-        self.code = code
+        self.code_block = code_block
 
     def __repr__(self) -> str:
-        return f"WhileStatement({self.condition}, {self.code})"
+        return f"WhileStatement({self.condition}, {self.code_block})"
 
 @dataclass
 class VariableDeclaration:
@@ -128,42 +130,111 @@ class Index:
 
     def __repr__(self) -> str:
         return f"Index({self.value})"
+    
+@dataclass
+class Expression:
+    def __init__ (self, expr):
+        self.expr = expr
+
+    def __repr__(self) -> str:
+        return f"{self.expr}"
 
 @dataclass
 class Mult:
-    def __init__ (self, left, right):
+    def __init__ (self, operator, left, right):
+        self.operator = operator
         self.left = left
         self.right = right
 
     def __repr__(self) -> str:
-        return f"Mult({self.left}, {self.right})"
+        return f"Mult({self.operator}, {self.left}, {self.right})"
 
 @dataclass
 class Div:
-    def __init__ (self, left, right):
+    def __init__ (self, operator, left, right):
+        self.operator = operator
         self.left = left
         self.right = right
 
     def __repr__(self) -> str:
-        return f"Div({self.left}, {self.right})"
+        return f"Div({self.operator}, {self.left}, {self.right})"
     
 @dataclass
 class Add:
-    def __init__ (self, left, right):
+    def __init__ (self, operator, left, right):
+        self.operator = operator
         self.left = left
         self.right = right
 
     def __repr__(self) -> str:
-        return f"Add({self.left}, {self.right})"
+        return f"Add({self.operator}, {self.left}, {self.right})"
 
 @dataclass
 class Sub:
-    def __init__ (self, left, right):
+    def __init__ (self, operator, left, right):
+        self.operator = operator
         self.left = left
         self.right = right
 
     def __repr__(self) -> str:
-        return f"Sub({self.left}, {self.right})"
+        return f"Sub({self.operator}, {self.left}, {self.right})"
+
+@dataclass
+class Compare:
+    def __init__ (self, operator, left, right):
+        self.operator = operator
+        self.left = left
+        self.right = right
+
+    def __repr__(self) -> str:
+        return f"Compare({self.operator}, {self.left}, {self.right})"
+
+@dataclass
+class Equality:
+    def __init__ (self, operator, left, right):
+        self.operator = operator
+        self.left = left
+        self.right = right
+
+    def __repr__(self) -> str:
+        return f"Equality({self.operator}, {self.left}, {self.right})"
+
+@dataclass
+class Neg:
+    def __init__ (self, operator, expr):
+        self.operator = operator
+        self.expr = expr
+
+    def __repr__(self) -> str:
+        return f"Neg({self.operator}, {self.expr})"
+    
+@dataclass
+class And:
+    def __init__ (self, operator, left, right):
+        self.operator = operator
+        self.left = left
+        self.right = right
+
+    def __repr__(self) -> str:
+        return f"And({self.operator}, {self.left}, {self.right})"
+
+@dataclass
+class Or:
+    def __init__ (self, operator, left, right):
+        self.operator = operator
+        self.left = left
+        self.right = right
+
+    def __repr__(self) -> str:
+        return f"Or({self.operator}, {self.left}, {self.right})"
+
+@dataclass
+class Terminal:
+    def __init__ (self, value):
+        self.value = value
+    
+    def __repr__(self) -> str:
+        return f"Terminal({self.value})"
 
 @dataclass
 class Number:

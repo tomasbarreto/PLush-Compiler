@@ -25,7 +25,7 @@ def parse(tokens):
 
     def STATEMENT_FUNCTION_LIST(result = list()):
 
-        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'IDENTIFIER']:
+        if lookahead() in ['VAR', 'VAL', 'IDENTIFIER']:
             result.append(STATEMENT())
             STATEMENT_FUNCTION_LISTp(result)
         elif lookahead() == 'FUNCTION':
@@ -89,39 +89,39 @@ def parse(tokens):
             pass
 
     def FUNCTION_STATEMENT_LIST():
-        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'RETURN', 'IDENTIFIER']:
-            FUNCTION_STATEMENT()
+        if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'IDENTIFIER']:
+            FUNCTION_STATEMENT(True)
             FUNCTION_STATEMENT_LIST()
         else:
             pass
     
-    def FUNCTION_STATEMENT():
+    def FUNCTION_STATEMENT(isFunction = False):
         if lookahead() in ['VAR', 'VAL']:
             VARIABLE_DECLARATION()
         elif lookahead() == 'IDENTIFIER':
-            IDENTIFIER_ACCESS()
+            IDENTIFIER_ACCESS(isFunction)
         elif lookahead() == 'IF':
             IF_STATEMENT()
         elif lookahead() == 'WHILE':
             WHILE()
-        elif lookahead() == 'RETURN':
-            RETURN()
+        #elif lookahead() == 'RETURN':
+        #    RETURN()
         else:
             raise ParsingException()
     
-    def RETURN():
-        if lookahead() == 'RETURN':
-            eat('RETURN')
-            VALUE()
-            eat('SEMICOLON')
-        else:
-            raise ParsingException()
+    #def RETURN():
+    #    if lookahead() == 'RETURN':
+    #        eat('RETURN')
+    #        OPERATION()
+    #        eat('SEMICOLON')
+    #    else:
+    #        raise ParsingException()
 
     def STATEMENT():
         if lookahead() in ['VAR', 'VAL']:
             return VARIABLE_DECLARATION()
         elif lookahead() == 'IDENTIFIER':
-            return IDENTIFIER_ACCESS()
+            return IDENTIFIER_ACCESS(False)
         elif lookahead() == 'IF':
             return IF_STATEMENT()
         elif lookahead() == 'WHILE':
@@ -129,35 +129,36 @@ def parse(tokens):
         else:
             raise ParsingException()
         
-    def IDENTIFIER_ACCESS():
+    def IDENTIFIER_ACCESS(isFunction = False):
         if lookahead() == 'IDENTIFIER':
             name = eat('IDENTIFIER')
-            return IDENTIFIER_ACCESSp(name)
+            return IDENTIFIER_ACCESSp(name, isFunction)
         else:
             raise ParsingException()
         
-    def IDENTIFIER_ACCESSp(name):
+    def IDENTIFIER_ACCESSp(name, isFunction=False):
         if lookahead() == 'ASSIGNMENT':
             eat('ASSIGNMENT')
-            value = VALUE()
+            expr = OPERATION()
             eat('SEMICOLON')
 
             return VariableAssignment(
                 name = name[1],
-                value = value
+                value = expr
             )
-        elif lookahead() == 'LPAREN':
-            return PROCEDURE_CALL(name)
+        elif isFunction:
+            if lookahead() == 'LPAREN':
+                return PROCEDURE_CALL(name)
         elif lookahead() == 'LRECPAREN':
             indexes = ARRAY_ACCESS()
             eat('ASSIGNMENT')
-            value = VALUE()
+            expr = OPERATION()
             eat('SEMICOLON')
 
             return ArrayVariableAssigment(
                 name = name[1],
                 indexes = indexes,
-                value = value
+                value = expr
             )
         else:
             raise ParsingException()
@@ -192,14 +193,14 @@ def parse(tokens):
             eat('COLON')
             type = TYPE()
             eat('ASSIGNMENT')
-            value = VALUE()
+            expr = OPERATION()
             eat('SEMICOLON')
 
             return VariableDeclaration(
                 declaration_type = declaration_type,
                 name = name[1],
                 type = type,
-                value = value
+                value = expr
             )
         else:
             raise ParsingException()
@@ -237,8 +238,11 @@ def parse(tokens):
         if lookahead() == 'STRING':
             eat('STRING')
             CONDITIONp()
-        elif lookahead() == 'NUMBER':
-            eat('NUMBER')
+        elif lookahead() == 'INT':
+            eat('INT')
+            CONDITIONp()
+        elif lookahead() == 'FLOAT':
+            eat('FLOAT')
             CONDITIONp()
         elif lookahead() == 'BOOLEAN':
             eat('BOOLEAN')
@@ -264,8 +268,8 @@ def parse(tokens):
     def ARRAY_ACCESS(indexes = list()):
         if lookahead() == 'LRECPAREN':
             eat('LRECPAREN')
-            value = VALUE()
-            indexes.append(Index(value))
+            expr = OPERATION()
+            indexes.append(Index(expr))
             eat('RRECPAREN')
             ARRAY_ACCESSp(indexes)
         else:
@@ -290,8 +294,8 @@ def parse(tokens):
     def FUNCTION_PARAMETER_LIST():
         arguments = list()
 
-        if lookahead() in ['STRING', 'NUMBER', 'BOOLEAN', 'LRECPAREN', 'IDENTIFIER']:
-            arguments.append(Argument(VALUE()))
+        if lookahead() in ['STRING', 'INT', 'FLOAT', 'BOOLEAN', 'LRECPAREN', 'IDENTIFIER']:
+            arguments.append(Argument(OPERATION()))
             FUNCTION_PARAMETER_LISTp()
         else:
             pass
@@ -320,8 +324,8 @@ def parse(tokens):
             VALUE_LIST()
 
     def VALUE_LIST():
-        if lookahead() in ['STRING', 'NUMBER', 'BOOLEAN']:
-            VALUE()
+        if lookahead() in ['STRING', 'INT', 'FLOAT', 'BOOLEAN']:
+            OPERATION()
             VALUE_LISTp()
         elif lookahead() == 'LRECPAREN':
             ARRAY()
@@ -346,7 +350,7 @@ def parse(tokens):
     def IF_STATEMENT():
         if lookahead() == 'IF':
             eat('IF')
-            condition = CONDITION()
+            condition = OPERATION()
             eat('LCURLYPAREN')
             then_block = STATEMENT_LIST(list())
             eat('RCURLYPAREN')
@@ -374,10 +378,15 @@ def parse(tokens):
     def WHILE():
         if lookahead() == 'WHILE':
             eat('WHILE')
-            CONDITION()
+            condition = OPERATION()
             eat('LCURLYPAREN')
-            STATEMENT_LIST()
+            instructions = STATEMENT_LIST()
             eat('RCURLYPAREN')
+        
+            return WhileStatement(
+                condition = condition,
+                code_block = instructions
+            )
         else:
             raise ParsingException()
 
@@ -389,96 +398,144 @@ def parse(tokens):
             pass
         
         return InstructionList(instructions)
+    
+    def REMOVE_PAREN():
+        if lookahead() == 'LPAREN':
+            eat('LPAREN')
+        elif lookahead() == 'RPAREN':
+            eat('RPAREN')
+        else:
+            pass
 
-    def CONDITION():
-        MULTIPLICATIVE()
+    def OPERATION():
+        return Expression(MULTIPLICATIVE())
     
     def MULTIPLICATIVE():
-        ADDITIVE()
+        expr1 = ADDITIVE()
         if lookahead() == 'MULTIPLICATIONOPERATOR':
-            eat('MULTIPLICATIONOPERATOR')
-            ADDITIVE()
+            operator = eat('MULTIPLICATIONOPERATOR')[1]
+            expr2 = OPERATION()
+
+            return Mult(
+                operator = operator,
+                left = expr1,
+                right = expr2
+            )
         else:
             pass
+
+        return expr1
 
     def ADDITIVE():
-        RELATIONAL()
+        expr1 = RELATIONAL()
         if lookahead() == 'ADDICTIONOPERATOR':
             eat('ADDICTIONOPERATOR')
-            RELATIONAL()
+            expr2 = OPERATION()
+
+            return Add(
+                left = expr1,
+                right = expr2
+            )
         elif lookahead() == 'SUBTRACTIONOPERATOR':
-            eat('SUBTRACTIONOPERATOR')
-            RELATIONAL()
-        else:
-            pass
-    
-    def RELATIONAL():
-        EQUALITY()
-        if lookahead() == 'COMPAREOPERATOR':
-            eat('COMPAREOPERATOR')
-            EQUALITY()
+            operator = eat('SUBTRACTIONOPERATOR')[1]
+            expr2 = OPERATION()
+
+            return Sub(
+                operator = operator,
+                left = expr1,
+                right = expr2
+            )
         else:
             pass
 
-    def EQUALITY():
-        NEG()
-        if lookahead() == 'EQUALITYOPERATOR':
-            eat('EQUALITYOPERATOR')
-            NEG()
+        return expr1
+    
+    def RELATIONAL():
+        expr1 = EQUALITY()
+        if lookahead() == 'COMPAREOPERATOR':
+            operator = eat('COMPAREOPERATOR')[1]
+            expr2 = OPERATION()
+
+            return Compare(
+                operator = operator,
+                left = expr1,
+                right = expr2
+            )
         else:
             pass
+
+        return expr1
+
+    def EQUALITY():
+        expr1 = NEG()
+        if lookahead() == 'EQUALITYOPERATOR':
+            operator = eat('EQUALITYOPERATOR')[1]
+            expr2 = OPERATION()
+
+            return Equality(
+                operator = operator,
+                left = expr1,
+                right = expr2
+            )
+        else:
+            pass
+
+        return expr1
 
     def NEG():
         if lookahead() == 'NEG':
-            eat('NEG')
-            AND()
+            operator = eat('NEG')[1]
+            expr1 = OPERATION()
+
+            return Neg(
+                operator = operator,
+                expr = expr1
+            )
         else:
-            AND()
+            return AND()
 
     def AND():
-        OR()
-        if lookahead() == 'LOGICOPERATOR':
-            eat('LOGICOPERATOR')
-            OR()
+        expr1 = OR()
+        if lookahead() == 'ANDOPERATOR':
+            operator = eat('ANDOPERATOR')[1]
+            expr2 = OPERATION()
+
+            return And(
+                operator = operator,
+                left = expr1,
+                right = expr2
+            )
         else:
             pass
+
+        return expr1
 
     def OR():
-        TERMINAL()
-        if lookahead() == 'LOGICOPERATOR':
-            eat('LOGICOPERATOR')
-            TERMINAL()
+        expr1 = TERMINAL()
+        if lookahead() == 'OROPERATOR':
+            operator = eat('OROPERATOR')[1]
+            expr2 = OPERATION()
+
+            return Or(
+                operator = operator,
+                left = expr1,
+                right = expr2
+            )
         else:
             pass
-    
+        
+        return expr1
         
     def TERMINAL():
-        if lookahead() == 'LPAREN':
-            eat('LPAREN')
-            VALUE()
-            eat('RPAREN')
-        else:
-            VALUE()
+        REMOVE_PAREN()
+        terminal = VALUE()
+        REMOVE_PAREN()
+
+        return Terminal(terminal)
 
     def CONDITIONp():
-        if lookahead() == 'LOGICOPERATOR':
-            eat('LOGICOPERATOR')
-            CONDITION()
-        elif lookahead() == 'COMPAREOPERATOR':
-            eat('COMPAREOPERATOR')
-            CONDITION()
-        elif lookahead() == 'EQUALITYOPERATOR':
-            eat('EQUALITYOPERATOR')
-            CONDITION()
-        elif lookahead() == 'ADDICTIONOPERATOR':
-            eat('ADDICTIONOPERATOR')
-            CONDITION()
-        elif lookahead() == 'SUBTRACTIONOPERATOR':
-            eat('SUBTRACTIONOPERATOR')
-            CONDITION()
-        elif lookahead() == 'MULTIPLICATIONOPERATOR':
-            eat('MULTIPLICATIONOPERATOR')
-            CONDITION()
+        if lookahead() in ['ANDOPERATOR', 'OROPERATOR', 'COMPAREOPERATOR', 'EQUALITYOPERATOR', 'ADDICTIONOPERATOR', 'SUBTRACTIONOPERATOR', 'MULTIPLICATIONOPERATOR']:
+            return
         else:
             pass
 
