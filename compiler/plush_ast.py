@@ -62,13 +62,41 @@ class FunctionCall:
         return f"FunctionCall({self.name}, {self.arguments})"
 
 @dataclass
-class Assignment:
+class VariableAssignment:
     def __init__ (self, name, value):
         self.name = name
         self.value = value
 
     def __repr__(self) -> str:
-        return f"Assignment({self.name}, {self.value})"
+        return f"VariableAssignment({self.name}, {self.value})"
+
+@dataclass
+class ArrayVariableAssigment:
+    def __init__ (self, name, indexes, value):
+        self.name = name
+        self.indexes = indexes
+        self.value = value
+
+    def __repr__(self) -> str:
+        return f"ArrayVariableAssigment({self.name}, {self.indexes}, {self.value})"
+    
+@dataclass
+class IndexList:
+    def __init__ (self, indexes):
+        self.indexes = indexes
+
+    def __repr__(self) -> str:
+        if self.indexes is None:
+            return "IndexList()"
+        return f"IndexList({', '.join([str(index) for index in self.indexes])})"
+    
+@dataclass
+class Index:
+    def __init__ (self, value):
+        self.value = value
+
+    def __repr__(self) -> str:
+        return f"Index({self.value})"
 
 @dataclass
 class Mult:
