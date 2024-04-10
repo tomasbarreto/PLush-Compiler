@@ -346,11 +346,17 @@ def parse(tokens):
     def IF_STATEMENT():
         if lookahead() == 'IF':
             eat('IF')
-            CONDITION()
+            condition = CONDITION()
             eat('LCURLYPAREN')
-            STATEMENT_LIST()
+            then_block = STATEMENT_LIST(list())
             eat('RCURLYPAREN')
-            IF_STATEMENTp()
+            else_block = IF_STATEMENTp()
+
+            return IfStatement(
+                condition = condition,
+                then_block = ThenBlock(then_block),
+                else_block = ElseBlock(else_block)
+            )
         else:
             raise ParsingException()
         
@@ -358,8 +364,10 @@ def parse(tokens):
         if lookahead() == 'ELSE':
             eat('ELSE')
             eat('LCURLYPAREN')
-            STATEMENT_LIST()
+            instructions = STATEMENT_LIST(list())
             eat('RCURLYPAREN')
+
+            return instructions
         else:
             pass
 
@@ -373,12 +381,14 @@ def parse(tokens):
         else:
             raise ParsingException()
 
-    def STATEMENT_LIST():
+    def STATEMENT_LIST(instructions = list()):
         if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'IDENTIFIER']:
-            STATEMENT()
-            STATEMENT_LIST()
+            instructions.append(STATEMENT())
+            STATEMENT_LIST(instructions)
         else:
             pass
+        
+        return InstructionList(instructions)
 
     def CONDITION():
         MULTIPLICATIVE()

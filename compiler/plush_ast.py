@@ -24,13 +24,33 @@ class InstructionList:
 
 @dataclass
 class IfStatement:
-    def __init__ (self, condition, then_code, else_code):
+    def __init__ (self, condition, then_block, else_block):
         self.condition = condition
-        self.then_code = then_code
-        self.else_code = else_code
+        self.then_block = then_block
+        self.else_block = else_block
 
     def __repr__(self) -> str:
-        return f"IfStatement({self.condition}, {self.then_code}, {self.else_code})"
+        return f"IfStatement({self.condition}, {self.then_block}, {self.else_block})"
+
+@dataclass
+class ThenBlock:
+    def __init__ (self, instructions):
+        self.instructions = instructions
+
+    def __repr__(self) -> str:
+        if self.instructions is None:
+            return "ThenBlock()"
+        return f"ThenBlock({self.instructions})"
+
+@dataclass
+class ElseBlock:
+    def __init__ (self, instructions):
+        self.instructions = instructions
+
+    def __repr__(self) -> str:
+        if self.instructions is None:
+            return "ElseBlock()"
+        return f"ElseBlock({self.instructions})"
 
 @dataclass
 class WhileStatement:
@@ -185,3 +205,4 @@ class ArgumentList:
 
     def __repr__(self) -> str:
         return f"ArgumentList({self.arguments})"
+    
