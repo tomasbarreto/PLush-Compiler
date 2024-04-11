@@ -407,6 +407,7 @@ def parse(tokens):
         else:
             pass
 
+    '''
     def OPERATION():
         return Expression(MULTIPLICATIVE())
     
@@ -532,6 +533,165 @@ def parse(tokens):
         REMOVE_PAREN()
 
         return Terminal(terminal)
+    '''
+
+    def OPERATION():
+        return Expression(OR())
+
+
+    def OR():
+        left = AND()
+        if lookahead() == 'OROPERATOR':
+            operator = eat('OROPERATOR')[1]
+            right = OPERATION()
+
+            return Or(
+                operator = operator,
+                left = left,
+                right = right
+            )
+        else:
+            pass
+
+        return left
+    
+    def AND():
+        left = NEG()
+        if lookahead() == 'ANDOPERATOR':
+            operator = eat('ANDOPERATOR')[1]
+            right = OPERATION()
+
+            return And(
+                operator = operator,
+                left = left,
+                right = right
+            )
+        else:
+            pass
+
+        return left
+    
+    def NEG():
+        if lookahead() == 'NEG':
+            operator = eat('NEG')[1]
+            expr = OPERATION()
+
+            return Unary(
+                operator = operator,
+                expr = expr
+            )
+        elif lookahead() == 'SUBTRACTIONOPERATOR':
+            operator = eat('SUBTRACTIONOPERATOR')[1]
+            expr = OPERATION()
+
+            return Unary(
+                operator = operator,
+                expr = expr
+            )
+        elif lookahead() == 'ADDICTIONOPERATOR':
+            operator = eat('ADDICTIONOPERATOR')[1]
+            expr = OPERATION()
+
+            return Unary(
+                operator = operator,
+                expr = expr
+            )
+        else:
+            return EQUALITY()
+        
+    def EQUALITY():
+        left = RELATIONAL()
+        if lookahead() == 'EQUALITYOPERATOR':
+            operator = eat('EQUALITYOPERATOR')[1]
+            right = OPERATION()
+
+            return Equality(
+                operator = operator,
+                left = left,
+                right = right
+            )
+        else:
+            pass
+
+        return left
+    
+    def RELATIONAL():
+        left = ADDITIVE()
+        if lookahead() == 'COMPAREOPERATOR':
+            operator = eat('COMPAREOPERATOR')[1]
+            right = OPERATION()
+
+            return Compare(
+                operator = operator,
+                left = left,
+                right = right
+            )
+        else:
+            pass
+
+        return left
+    
+    def ADDITIVE():
+        left = MULTIPLICATIVE()
+        if lookahead() == 'ADDICTIONOPERATOR':
+            operator = eat('ADDICTIONOPERATOR')[1]
+            right = OPERATION()
+
+            return Add(
+                operator = operator,
+                left = left,
+                right = right
+            )
+        elif lookahead() == 'SUBTRACTIONOPERATOR':
+            operator = eat('SUBTRACTIONOPERATOR')[1]
+            right = OPERATION()
+
+            return Sub(
+                operator = operator,
+                left = left,
+                right = right
+            )
+        else:
+            pass
+
+        return left
+
+    def MULTIPLICATIVE():
+        left = TERMINAL()
+        if lookahead() == 'MULTIPLICATIONOPERATOR':
+            operator = eat('MULTIPLICATIONOPERATOR')[1]
+            right = OPERATION()
+
+            return Mult(
+                operator = operator,
+                left = left,
+                right = right
+            )
+        else:
+            pass
+
+        return left
+    
+    def TERMINAL():
+        if lookahead() == 'LPAREN':
+            REMOVE_PAREN()
+            expr = OPERATION()
+            REMOVE_PAREN()
+
+            return Expression(expr)
+        else:
+            return Terminal(VALUE())
+
+    '''
+    def TERMINAL():
+        if lookahead() == 'LPAREN': 
+            eat('LPAREN')  
+            expr = OPERATION() 
+            eat('RPAREN')  
+            return Expression(expr)
+        else:
+            return Terminal(VALUE())
+    '''
 
     def CONDITIONp():
         if lookahead() in ['ANDOPERATOR', 'OROPERATOR', 'COMPAREOPERATOR', 'EQUALITYOPERATOR', 'ADDICTIONOPERATOR', 'SUBTRACTIONOPERATOR', 'MULTIPLICATIONOPERATOR']:

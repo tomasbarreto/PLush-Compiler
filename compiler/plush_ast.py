@@ -200,13 +200,13 @@ class Equality:
         return f"Equality({self.operator}, {self.left}, {self.right})"
 
 @dataclass
-class Neg:
+class Unary:
     def __init__ (self, operator, expr):
         self.operator = operator
         self.expr = expr
 
     def __repr__(self) -> str:
-        return f"Neg({self.operator}, {self.expr})"
+        return f"Unary({self.operator}, {self.expr})"
     
 @dataclass
 class And:
