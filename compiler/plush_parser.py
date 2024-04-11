@@ -228,28 +228,16 @@ def parse(tokens):
             raise ParsingException()
         
     def VALUE():
-        if lookahead() == 'SUBTRACTIONOPERATOR':
-            eat('SUBTRACTIONOPERATOR')
-            VALUEp()
-        else:
-            VALUEp()
-
-    def VALUEp():
         if lookahead() == 'STRING':
-            eat('STRING')
-            CONDITIONp()
+            return String(eat('STRING')[1])
         elif lookahead() == 'INT':
-            eat('INT')
-            CONDITIONp()
+            return Int(eat('INT')[1])
         elif lookahead() == 'FLOAT':
-            eat('FLOAT')
-            CONDITIONp()
+            return Float(eat('FLOAT')[1])
         elif lookahead() == 'BOOLEAN':
-            eat('BOOLEAN')
-            CONDITIONp()
+            return Bool(eat('BOOLEAN')[1])
         elif lookahead() == 'LRECPAREN':
-            ARRAY()
-            CONDITIONp()
+            return Array(ARRAY())
         elif lookahead() == 'IDENTIFIER':
             eat('IDENTIFIER')
             FUNCTION_CALL()
@@ -680,7 +668,8 @@ def parse(tokens):
 
             return Expression(expr)
         else:
-            return Terminal(VALUE())
+            result = VALUE()
+            return result
 
     '''
     def TERMINAL():

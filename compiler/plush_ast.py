@@ -229,22 +229,6 @@ class Or:
         return f"Or({self.operator}, {self.left}, {self.right})"
 
 @dataclass
-class Terminal:
-    def __init__ (self, value):
-        self.value = value
-    
-    def __repr__(self) -> str:
-        return f"Terminal({self.value})"
-
-@dataclass
-class Number:
-    def __init__ (self, value):
-        self.value = value
-
-    def __repr__(self) -> str:
-        return f"Number({self.value})"
-    
-@dataclass
 class ArrayType:
     def __init__ (self, type):
         self.type = type
@@ -276,4 +260,44 @@ class ArgumentList:
 
     def __repr__(self) -> str:
         return f"ArgumentList({self.arguments})"
+    
+@dataclass
+class Int:
+    def __init__ (self, value):
+        self.value = value
+
+    def __repr__(self) -> str:
+        return f"Int({self.value})"
+    
+@dataclass
+class String:
+    def __init__ (self, value):
+        self.value = value
+
+    def __repr__(self) -> str:
+        return f"String({self.value})"
+    
+@dataclass
+class Float:
+    def __init__ (self, value):
+        self.value = value
+
+    def __repr__(self) -> str:
+        return f"Float({self.value})"
+
+@dataclass
+class Bool:
+    def __init__ (self, value):
+        self.value = value
+
+    def __repr__(self) -> str:
+        return f"Bool({self.value})"
+
+@dataclass
+class Array:
+    def __init__ (self, content):
+        self.content = content
+
+    def __repr__(self) -> str:
+        return f"Array({self.content})"
     
