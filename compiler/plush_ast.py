@@ -259,7 +259,7 @@ class ArgumentList:
         self.arguments = arguments
 
     def __repr__(self) -> str:
-        return f"ArgumentList({self.arguments})"
+        return f"ArgumentList({', '.join([str(argument) for argument in self.arguments])})"
     
 @dataclass
 class Int:
@@ -300,4 +300,34 @@ class Array:
 
     def __repr__(self) -> str:
         return f"Array({self.content})"
+
+@dataclass
+class VariableAccess:
+    def __init__ (self, name):
+        self.name = name
+
+    def __repr__(self) -> str:
+        return f"VariableAccess({self.name})"
+
+@dataclass
+class FunctionCall:
+    def __init__ (self, name, arguments=None):
+        self.name = name
+        self.arguments = arguments
+
+    def __repr__(self) -> str:
+        if self.arguments is None:
+            return f"FunctionCall({self.name})"
+        return f"FunctionCall({self.name}, {self.arguments})"
     
+@dataclass
+class ArrayAccess:
+    def __init__ (self, name, function_parameters=None, indexes=None):
+        self.name = name
+        self.function_parameters = function_parameters
+        self.indexes = indexes
+
+    def __repr__(self) -> str:
+        if self.function_parameters is None:
+            return f"ArrayAccess({self.name}, {self.indexes})"
+        return f"ArrayAccess({self.name}, {self.function_parameters}, {self.indexes})"    

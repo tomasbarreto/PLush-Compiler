@@ -239,17 +239,37 @@ def parse(tokens):
         elif lookahead() == 'LRECPAREN':
             return Array(ARRAY())
         elif lookahead() == 'IDENTIFIER':
-            eat('IDENTIFIER')
-            FUNCTION_CALL()
-            VALUEpp()
-            CONDITIONp()
+            name = eat('IDENTIFIER')
+            function = FUNCTION_CALL()
+            indexes = VALUEp()
+
+            print(indexes)
+
+            if function and indexes:
+                return ArrayAccess(
+                    name = FunctionCall(name[1], function),
+                    indexes = indexes
+                )
+            elif function and not indexes:
+                return FunctionCall(
+                    name = name[1],
+                    arguments = function
+                )
+            elif indexes:
+                return ArrayAccess(
+                    name = name[1],
+                    indexes = indexes
+                )
+            else:
+                return VariableAccess(
+                    name = name[1]
+                )
         else:
             raise ParsingException()
         
-    def VALUEpp():
+    def VALUEp():
         if lookahead() == 'LRECPAREN':
-            ARRAY_ACCESS()
-            CONDITIONp()
+            return ARRAY_ACCESS()
         else:
             pass
     
@@ -274,26 +294,27 @@ def parse(tokens):
     def FUNCTION_CALL():
         if lookahead() == 'LPAREN':
             eat('LPAREN')
-            FUNCTION_PARAMETER_LIST()
+            parameters = FUNCTION_PARAMETER_LIST()
             eat('RPAREN')
+
+            return parameters
         else:
             pass
 
-    def FUNCTION_PARAMETER_LIST():
-        arguments = list()
+    def FUNCTION_PARAMETER_LIST(arguments=list()):
 
         if lookahead() in ['STRING', 'INT', 'FLOAT', 'BOOLEAN', 'LRECPAREN', 'IDENTIFIER']:
             arguments.append(Argument(OPERATION()))
-            FUNCTION_PARAMETER_LISTp()
+            FUNCTION_PARAMETER_LISTp(arguments)
         else:
             pass
 
         return ArgumentList(arguments)
     
-    def FUNCTION_PARAMETER_LISTp():
+    def FUNCTION_PARAMETER_LISTp(arguments):
         if lookahead() == 'COMMA':
             eat('COMMA')
-            FUNCTION_PARAMETER_LIST()
+            FUNCTION_PARAMETER_LIST(arguments)
         else:
             pass
         
