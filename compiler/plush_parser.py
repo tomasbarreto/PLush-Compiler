@@ -107,18 +107,18 @@ def parse(tokens):
 
     def FUNCTION_STATEMENT_LIST(instructions=list()):
         if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'IDENTIFIER']:
-            instructions.append(FUNCTION_STATEMENT(True))
+            instructions.append(FUNCTION_STATEMENT())
             FUNCTION_STATEMENT_LIST(instructions)
         else:
             pass
         
         return instructions
     
-    def FUNCTION_STATEMENT(isFunction = False):
+    def FUNCTION_STATEMENT():
         if lookahead() in ['VAR', 'VAL']:
             return VARIABLE_DECLARATION()
         elif lookahead() == 'IDENTIFIER':
-            return IDENTIFIER_ACCESS(isFunction)
+            return IDENTIFIER_ACCESS()
         elif lookahead() == 'IF':
             return IF_STATEMENT()
         elif lookahead() == 'WHILE':
@@ -141,21 +141,17 @@ def parse(tokens):
             return VARIABLE_DECLARATION()
         elif lookahead() == 'IDENTIFIER':
             return IDENTIFIER_ACCESS(False)
-        elif lookahead() == 'IF':
-            return IF_STATEMENT()
-        elif lookahead() == 'WHILE':
-            return WHILE()
         else:
             raise ParsingException()
         
-    def IDENTIFIER_ACCESS(isFunction = False):
+    def IDENTIFIER_ACCESS(isFunction = True):
         if lookahead() == 'IDENTIFIER':
             name = eat('IDENTIFIER')
             return IDENTIFIER_ACCESSp(name, isFunction)
         else:
             raise ParsingException()
         
-    def IDENTIFIER_ACCESSp(name, isFunction=False):
+    def IDENTIFIER_ACCESSp(name, isFunction=True):
         if lookahead() == 'ASSIGNMENT':
             eat('ASSIGNMENT')
             expr = OPERATION()
@@ -167,6 +163,8 @@ def parse(tokens):
             )
         elif isFunction and lookahead() == 'LPAREN':
             return PROCEDURE_CALL(name)
+        elif not isFunction and lookahead() == 'LPAREN':
+            raise ParsingException()
         elif lookahead() == 'LRECPAREN':
             indexes = ARRAY_ACCESS(list())
             eat('ASSIGNMENT')
@@ -186,7 +184,7 @@ def parse(tokens):
     def PROCEDURE_CALL(name):
         if lookahead() == 'LPAREN':
             eat('LPAREN')
-            arguments = FUNCTION_PARAMETER_LIST()
+            arguments = FUNCTION_PARAMETER_LIST(list())
             eat('RPAREN')
             eat('SEMICOLON')
 
@@ -287,11 +285,11 @@ def parse(tokens):
         
     def VALUEp():
         if lookahead() == 'LRECPAREN':
-            return ARRAY_ACCESS()
+            return ARRAY_ACCESS(list())
         else:
             pass
     
-    def ARRAY_ACCESS(indexes = list()):
+    def ARRAY_ACCESS(indexes=list()):
         if lookahead() == 'LRECPAREN':
             eat('LRECPAREN')
             expr = OPERATION()
@@ -385,7 +383,7 @@ def parse(tokens):
             eat('IF')
             condition = OPERATION()
             eat('LCURLYPAREN')
-            then_block = STATEMENT_LIST(list())
+            then_block = FUNCTION_STATEMENT_LIST(list())
             eat('RCURLYPAREN')
             else_block = IF_STATEMENTp()
 
@@ -401,7 +399,7 @@ def parse(tokens):
         if lookahead() == 'ELSE':
             eat('ELSE')
             eat('LCURLYPAREN')
-            instructions = STATEMENT_LIST(list())
+            instructions = FUNCTION_STATEMENT_LIST(list())
             eat('RCURLYPAREN')
 
             return instructions
@@ -413,7 +411,7 @@ def parse(tokens):
             eat('WHILE')
             condition = OPERATION()
             eat('LCURLYPAREN')
-            instructions = STATEMENT_LIST()
+            instructions = FUNCTION_STATEMENT_LIST(list())
             eat('RCURLYPAREN')
         
             return WhileStatement(
