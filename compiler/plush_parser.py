@@ -165,9 +165,8 @@ def parse(tokens):
                 name = name[1],
                 value = expr
             )
-        elif isFunction:
-            if lookahead() == 'LPAREN':
-                return PROCEDURE_CALL(name)
+        elif isFunction and lookahead() == 'LPAREN':
+            return PROCEDURE_CALL(name)
         elif lookahead() == 'LRECPAREN':
             indexes = ARRAY_ACCESS(list())
             eat('ASSIGNMENT')
