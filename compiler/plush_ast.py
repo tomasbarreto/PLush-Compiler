@@ -42,7 +42,9 @@ class ThenBlock:
     def __repr__(self) -> str:
         if self.instructions is None:
             return "ThenBlock()"
-        return f"ThenBlock({self.instructions})"
+        return f"ThenBlock({', '.join([str(instruction) for instruction in self.instructions])})"
+
+
 
 @dataclass
 class ElseBlock:
@@ -290,14 +292,22 @@ class Float:
 
     def __repr__(self) -> str:
         return f"Float({self.value})"
-
+    
 @dataclass
-class Bool:
+class Char:
     def __init__ (self, value):
         self.value = value
 
     def __repr__(self) -> str:
-        return f"Bool({self.value})"
+        return f"Char({self.value})"
+
+@dataclass
+class Boolean:
+    def __init__ (self, value):
+        self.value = value
+
+    def __repr__(self) -> str:
+        return f"Boolean({self.value})"
 
 @dataclass
 class Array:

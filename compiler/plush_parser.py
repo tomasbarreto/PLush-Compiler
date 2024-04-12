@@ -248,12 +248,14 @@ def parse(tokens):
     def VALUE():
         if lookahead() == 'STRING':
             return String(eat('STRING')[1])
+        elif lookahead() == 'CHAR':
+            return Char(eat('CHAR')[1])
         elif lookahead() == 'INT':
             return Int(eat('INT')[1])
         elif lookahead() == 'FLOAT':
             return Float(eat('FLOAT')[1])
         elif lookahead() == 'BOOLEAN':
-            return Bool(eat('BOOLEAN')[1])
+            return Boolean(eat('BOOLEAN')[1])
         elif lookahead() == 'LRECPAREN':
             return ARRAY()
         elif lookahead() == 'IDENTIFIER':
@@ -416,7 +418,7 @@ def parse(tokens):
         
             return WhileStatement(
                 condition = condition,
-                code_block = instructions
+                code_block = InstructionList(instructions)
             )
         else:
             raise ParsingException()
