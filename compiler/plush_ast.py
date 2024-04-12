@@ -76,14 +76,21 @@ class VariableDeclaration:
     
 @dataclass
 class FunctionDeclaration:
-    def __init__ (self, name, parameters, type, body):
+    def __init__ (self, name, type, parameters=None, instructions=None):
         self.name = name
         self.parameters = parameters
         self.type = type
-        self.body = body
+        self.instructions = instructions
 
     def __repr__(self) -> str:
-        return f"FunctionDeclaration({self.name}, {self.parameters}, {self.type}, {self.body})"
+        if self.parameters is None and self.instructions is None:
+            return f"FunctionDeclaration({self.name}, {self.type})"
+        elif self.parameters is None:
+            return f"FunctionDeclaration({self.name}, {self.type}, {self.instructions})"
+        elif self.instructions is None:
+            return f"FunctionDeclaration({self.name}, {self.parameters}, {self.type})"
+        
+        return f"FunctionDeclaration({self.name}, {self.parameters}, {self.type}, {self.instructions})"
     
 @dataclass
 class FunctionCall:
@@ -331,3 +338,23 @@ class ArrayAccess:
         if self.function_parameters is None:
             return f"ArrayAccess({self.name}, {self.indexes})"
         return f"ArrayAccess({self.name}, {self.function_parameters}, {self.indexes})"    
+
+@dataclass
+class ParameterList:
+    def __init__ (self, parameters=None):
+        self.parameters = parameters
+
+    def __repr__(self) -> str:
+        if self.parameters is None:
+            return "ParameterList()"
+        return f"ParameterList({', '.join([str(parameter) for parameter in self.parameters])})"
+
+@dataclass
+class Parameter:
+    def __init__ (self, declaration_type, name, type):
+        self.declaration_type = declaration_type
+        self.name = name
+        self.type = type
+
+    def __repr__(self) -> str:
+        return f"Parameter({self.declaration_type}, {self.name}, {self.type})"

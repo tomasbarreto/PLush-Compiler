@@ -39,21 +39,29 @@ def parse(tokens):
     def FUNCTION():
         if lookahead() == 'FUNCTION':
             eat('FUNCTION')
-            eat('IDENTIFIER')
+            name = eat('IDENTIFIER')
             eat('LPAREN')
-            FUNCTION_DECLARATION_PARAMETERS()
+            parameters = FUNCTION_DECLARATION_PARAMETERS()
             eat('RPAREN')
             eat('COLON')
-            TYPE()
-            FUNCTIONp()
+            type = TYPE()
+            instructions = FUNCTIONp()
+
+            return FunctionDeclaration(
+                name = name[1],
+                parameters = parameters,
+                type = type,
+                instructions = instructions
+            )
         else:
             raise ParsingException()
         
     def FUNCTIONp():
         if lookahead() == 'LCURLYPAREN':
             eat('LCURLYPAREN')
-            FUNCTION_STATEMENT_LIST()
+            instructions = FUNCTION_STATEMENT_LIST(list())
             eat('RCURLYPAREN')
+            return InstructionList(instructions)
         elif lookahead() == 'COMMA':
             eat('COMMA')
         else:
@@ -61,49 +69,60 @@ def parse(tokens):
         
     def FUNCTION_DECLARATION_PARAMETERS():
         if lookahead() in ['VAL', 'VAR']:
-            FUNCTION_DECLARATION_PARAMETER_LIST()
+            return FUNCTION_DECLARATION_PARAMETER_LIST(list())
         else:
             pass
     
-    def FUNCTION_DECLARATION_PARAMETER_LIST():
+    def FUNCTION_DECLARATION_PARAMETER_LIST(parameters=list()):
         if lookahead() in ['VAL', 'VAR']:
-            FUNCTION_PARAMETER()
-            FUNCTION_DECLARATION_PARAMETER_LISTp()
+            parameters.append(FUNCTION_PARAMETER())
+            FUNCTION_DECLARATION_PARAMETER_LISTp(parameters)
+
+            return ParameterList(parameters)
         else:
             raise ParsingException()
         
     def FUNCTION_PARAMETER():
         if lookahead() in ['VAL', 'VAR']:
+            declaration_type = lookahead()
             VDECLARATION()
-            eat('IDENTIFIER')
+            name = eat('IDENTIFIER')
             eat('COLON')
-            TYPE()
+            type = TYPE()
+
+            return Parameter(
+                declaration_type = declaration_type,
+                name = name[1],
+                type = type
+            )
         else:
             raise ParsingException()
         
-    def FUNCTION_DECLARATION_PARAMETER_LISTp():
+    def FUNCTION_DECLARATION_PARAMETER_LISTp(parameters):
         if lookahead() == 'COMMA':
             eat('COMMA')
-            FUNCTION_DECLARATION_PARAMETER_LIST()
+            FUNCTION_DECLARATION_PARAMETER_LIST(parameters)
         else:
             pass
 
-    def FUNCTION_STATEMENT_LIST():
+    def FUNCTION_STATEMENT_LIST(instructions=list()):
         if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'IDENTIFIER']:
-            FUNCTION_STATEMENT(True)
-            FUNCTION_STATEMENT_LIST()
+            instructions.append(FUNCTION_STATEMENT(True))
+            FUNCTION_STATEMENT_LIST(instructions)
         else:
             pass
+        
+        return instructions
     
     def FUNCTION_STATEMENT(isFunction = False):
         if lookahead() in ['VAR', 'VAL']:
-            VARIABLE_DECLARATION()
+            return VARIABLE_DECLARATION()
         elif lookahead() == 'IDENTIFIER':
-            IDENTIFIER_ACCESS(isFunction)
+            return IDENTIFIER_ACCESS(isFunction)
         elif lookahead() == 'IF':
-            IF_STATEMENT()
+            return IF_STATEMENT()
         elif lookahead() == 'WHILE':
-            WHILE()
+            return WHILE()
         #elif lookahead() == 'RETURN':
         #    RETURN()
         else:
@@ -243,8 +262,6 @@ def parse(tokens):
             function = FUNCTION_CALL()
             indexes = VALUEp()
 
-            print(indexes)
-
             if function and indexes:
                 return ArrayAccess(
                     name = FunctionCall(name[1], function),
@@ -294,7 +311,7 @@ def parse(tokens):
     def FUNCTION_CALL():
         if lookahead() == 'LPAREN':
             eat('LPAREN')
-            parameters = FUNCTION_PARAMETER_LIST()
+            parameters = FUNCTION_PARAMETER_LIST(list())
             eat('RPAREN')
 
             return parameters
