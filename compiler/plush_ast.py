@@ -112,13 +112,12 @@ class VariableAssignment:
 
 @dataclass
 class ArrayVariableAssigment:
-    def __init__ (self, name, indexes, value):
-        self.name = name
-        self.indexes = indexes
-        self.value = value
+    def __init__ (self, left, right):
+        self.left = left
+        self.right = right
 
     def __repr__(self) -> str:
-        return f"ArrayVariableAssigment({self.name}, {self.indexes}, {self.value})"
+        return f"ArrayAssigment({self.left}, {self.right})"
     
 @dataclass
 class IndexList:

@@ -169,15 +169,17 @@ def parse(tokens):
             if lookahead() == 'LPAREN':
                 return PROCEDURE_CALL(name)
         elif lookahead() == 'LRECPAREN':
-            indexes = ARRAY_ACCESS()
+            indexes = ARRAY_ACCESS(list())
             eat('ASSIGNMENT')
             expr = OPERATION()
             eat('SEMICOLON')
 
             return ArrayVariableAssigment(
-                name = name[1],
-                indexes = indexes,
-                value = expr
+                left = ArrayAccess(
+                    name = name[1],
+                    indexes = indexes
+                ),
+                right = expr
             )
         else:
             raise ParsingException()
