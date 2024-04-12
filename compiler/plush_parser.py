@@ -257,7 +257,7 @@ def parse(tokens):
         elif lookahead() == 'BOOLEAN':
             return Bool(eat('BOOLEAN')[1])
         elif lookahead() == 'LRECPAREN':
-            return Array(ARRAY())
+            return ARRAY()
         elif lookahead() == 'IDENTIFIER':
             name = eat('IDENTIFIER')
             function = FUNCTION_CALL()
@@ -339,8 +339,10 @@ def parse(tokens):
     def ARRAY():
         if lookahead() == 'LRECPAREN':
             eat('LRECPAREN')
-            ARRAY_CONTENT()
+            array_content = ARRAY_CONTENT()
             eat('RRECPAREN')
+
+            return array_content
         else:
             raise ParsingException()
         
@@ -348,22 +350,26 @@ def parse(tokens):
         if lookahead() == 'RRECPAREN':
             pass
         else:
-            VALUE_LIST()
+            return VALUE_LIST(list())
 
-    def VALUE_LIST():
-        if lookahead() in ['STRING', 'INT', 'FLOAT', 'BOOLEAN']:
-            OPERATION()
-            VALUE_LISTp()
+    def VALUE_LIST(content=list()):
+        if lookahead() in ['STRING', 'INT', 'FLOAT', 'BOOLEAN', 'IDENTIFIER']:
+            content.append(OPERATION())
+            VALUE_LISTp(content)
+
+            return Array(content)
         elif lookahead() == 'LRECPAREN':
-            ARRAY()
-            VALUE_LISTp2()
+            content.append(ARRAY())
+            VALUE_LISTp2(content)
+
+            return Array(content)
         else:
             raise ParsingException()
         
-    def VALUE_LISTp():
+    def VALUE_LISTp(content):
         if lookahead() == 'COMMA':
             eat('COMMA')
-            VALUE_LIST()
+            VALUE_LIST(content)
         else:
             pass
     

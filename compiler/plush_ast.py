@@ -305,8 +305,7 @@ class Array:
         self.content = content
 
     def __repr__(self) -> str:
-        return f"Array({self.content})"
-
+        return f"Array({', '.join([str(content) for content in self.content])})"
 @dataclass
 class VariableAccess:
     def __init__ (self, name):
