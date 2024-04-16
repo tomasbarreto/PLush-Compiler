@@ -32,7 +32,7 @@ def parse(tokens):
             result.append(FUNCTION())
             STATEMENT_FUNCTION_LISTp(result)
         else:
-            raise ParsingException()
+            pass
         
         return InstructionList(result)
         
@@ -248,8 +248,6 @@ def parse(tokens):
     def VALUE():
         if lookahead() == 'STRING':
             return String(eat('STRING')[1])
-        elif lookahead() == 'CHAR':
-            return Char(eat('CHAR')[1])
         elif lookahead() == 'INT':
             return Int(eat('INT')[1])
         elif lookahead() == 'FLOAT':
@@ -418,7 +416,7 @@ def parse(tokens):
         
             return WhileStatement(
                 condition = condition,
-                code_block = InstructionList(instructions)
+                code_block = instructions
             )
         else:
             raise ParsingException()
@@ -440,137 +438,8 @@ def parse(tokens):
         else:
             pass
 
-    '''
-    def OPERATION():
-        return Expression(MULTIPLICATIVE())
-    
-    def MULTIPLICATIVE():
-        expr1 = ADDITIVE()
-        if lookahead() == 'MULTIPLICATIONOPERATOR':
-            operator = eat('MULTIPLICATIONOPERATOR')[1]
-            expr2 = OPERATION()
-
-            return Mult(
-                operator = operator,
-                left = expr1,
-                right = expr2
-            )
-        else:
-            pass
-
-        return expr1
-
-    def ADDITIVE():
-        expr1 = RELATIONAL()
-        if lookahead() == 'ADDICTIONOPERATOR':
-            eat('ADDICTIONOPERATOR')
-            expr2 = OPERATION()
-
-            return Add(
-                left = expr1,
-                right = expr2
-            )
-        elif lookahead() == 'SUBTRACTIONOPERATOR':
-            operator = eat('SUBTRACTIONOPERATOR')[1]
-            expr2 = OPERATION()
-
-            return Sub(
-                operator = operator,
-                left = expr1,
-                right = expr2
-            )
-        else:
-            pass
-
-        return expr1
-    
-    def RELATIONAL():
-        expr1 = EQUALITY()
-        if lookahead() == 'COMPAREOPERATOR':
-            operator = eat('COMPAREOPERATOR')[1]
-            expr2 = OPERATION()
-
-            return Compare(
-                operator = operator,
-                left = expr1,
-                right = expr2
-            )
-        else:
-            pass
-
-        return expr1
-
-    def EQUALITY():
-        expr1 = NEG()
-        if lookahead() == 'EQUALITYOPERATOR':
-            operator = eat('EQUALITYOPERATOR')[1]
-            expr2 = OPERATION()
-
-            return Equality(
-                operator = operator,
-                left = expr1,
-                right = expr2
-            )
-        else:
-            pass
-
-        return expr1
-
-    def NEG():
-        if lookahead() == 'NEG':
-            operator = eat('NEG')[1]
-            expr1 = OPERATION()
-
-            return Neg(
-                operator = operator,
-                expr = expr1
-            )
-        else:
-            return AND()
-
-    def AND():
-        expr1 = OR()
-        if lookahead() == 'ANDOPERATOR':
-            operator = eat('ANDOPERATOR')[1]
-            expr2 = OPERATION()
-
-            return And(
-                operator = operator,
-                left = expr1,
-                right = expr2
-            )
-        else:
-            pass
-
-        return expr1
-
-    def OR():
-        expr1 = TERMINAL()
-        if lookahead() == 'OROPERATOR':
-            operator = eat('OROPERATOR')[1]
-            expr2 = OPERATION()
-
-            return Or(
-                operator = operator,
-                left = expr1,
-                right = expr2
-            )
-        else:
-            pass
-        
-        return expr1
-        
-    def TERMINAL():
-        REMOVE_PAREN()
-        terminal = VALUE()
-        REMOVE_PAREN()
-
-        return Terminal(terminal)
-    '''
-
     def OPERATION():
         return Expression(OR())
-
 
     def OR():
         left = AND()
@@ -716,25 +585,10 @@ def parse(tokens):
             result = VALUE()
             return result
 
-    '''
-    def TERMINAL():
-        if lookahead() == 'LPAREN': 
-            eat('LPAREN')  
-            expr = OPERATION() 
-            eat('RPAREN')  
-            return Expression(expr)
-        else:
-            return Terminal(VALUE())
-    '''
-
-    def CONDITIONp():
-        if lookahead() in ['ANDOPERATOR', 'OROPERATOR', 'COMPAREOPERATOR', 'EQUALITYOPERATOR', 'ADDICTIONOPERATOR', 'SUBTRACTIONOPERATOR', 'MULTIPLICATIONOPERATOR']:
-            return
-        else:
-            pass
-
     ast = S()
 
     print("\nPARSING SUCCESSFUL!")
 
     print(ast)
+
+    return ast
