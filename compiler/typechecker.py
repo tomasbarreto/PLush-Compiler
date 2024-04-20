@@ -106,16 +106,26 @@ def verify(node, ctx: Context):
             raise TypeError(f"Variavel {node.name} nao foi declarada")
         return type_map[ctx.get_type(node.name)]
     elif isinstance(node, FunctionDeclaration):
-        # Check if the function is already declared
-        if ctx.has_var(node.name):
+        if ctx.has_function(node.name):
             raise TypeError(f"Funcao {node.name} ja foi declarada")
-        # Set the function type in the context
-        ctx.set_type(node.name, node.type)
-        # Enter a new scope
+
+        # Save the function for function call typecheking
+        ctx.enter_function_scope()
+        ctx.set_type_function(node.name, node.type)      
+
+        for param in node.parameters.parameters:
+            ctx.set_type_function(param.name, param.type)
+
+        # typecheck the actual function declaration
+
         ctx.enter_scope()
+
+        ctx.set_type(node.name, node.type)
+        
         for param in node.parameters.parameters:
             ctx.set_type(param.name, param.type)
-        # Verify the function body
-        verify(node.instructions, ctx)
-        # Exit the scope
+
+        for instruction in node.instructions.instructions:
+            verify(instruction, ctx)
+
         ctx.exit_scope()
