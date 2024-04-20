@@ -1,6 +1,7 @@
 class Context(object):
     def __init__(self):
         self.stack = [{}]
+        self.function_stack = []
     
     def get_type(self, name):
         for scope in self.stack:
@@ -26,3 +27,26 @@ class Context(object):
 
     def exit_scope(self):
         self.stack.pop(0)
+
+    # functions for function stack
+    def set_type_function(self, name, value):
+        scope = self.function_stack[0]
+        scope[name] = value
+
+    def enter_function_scope(self):
+        self.function_stack.insert(0, {})
+
+    def has_function(self, function_name):
+        for scope in self.function_stack:
+            first_key = next(iter(scope))
+            if function_name == first_key:
+                return True
+        return False
+    
+    def get_type_function_param(self, function_name, param_position):
+        for scope in self.function_stack:
+            first_key = next(iter(scope))
+            if function_name == first_key:
+                wanted_scope = scope
+        
+        return list(wanted_scope.items())[param_position + 1][1]
