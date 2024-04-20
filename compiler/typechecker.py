@@ -71,7 +71,7 @@ def verify(node, ctx: Context):
         if right != left:
             raise TypeError(f"Tipos incompatíveis: {right} e {left}")
         
-        return right
+        return Boolean
     elif isinstance(node, (
         Add,
         Sub,
@@ -105,6 +105,21 @@ def verify(node, ctx: Context):
         if not ctx.has_var(node.name):
             raise TypeError(f"Variavel {node.name} nao foi declarada")
         return type_map[ctx.get_type(node.name)]
+    elif isinstance(node, IfStatement):
+        expr_type = verify(node.condition, ctx)
+
+        if expr_type != Boolean:
+            raise TypeError(f"If conditions must have type booean! Not type {expr_type}!")
+
+        verify(node.then_block, ctx)
+        if node.else_block.instructions:
+            verify(node.else_block, ctx)
+    elif isinstance(node, ThenBlock):
+        for instruction in node.instructions:
+            verify(instruction, ctx)
+    elif isinstance(node, ElseBlock):
+        for instruction in node.instructions:
+            verify(instruction, ctx)
     elif isinstance(node, FunctionDeclaration):
         if ctx.has_function(node.name):
             raise TypeError(f"Funcao {node.name} ja foi declarada")
