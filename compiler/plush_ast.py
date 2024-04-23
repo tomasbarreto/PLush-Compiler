@@ -95,6 +95,19 @@ class FunctionDeclaration:
         return f"FunctionDeclaration({self.name}, {self.parameters}, {self.type}, {self.instructions})"
     
 @dataclass
+class FunctionDefinition:
+    def __init__ (self, name, type, parameters=None):
+        self.name = name
+        self.parameters = parameters
+        self.type = type
+
+    def __repr__(self) -> str:
+        if self.parameters is None:
+            return f"FunctionDeclaration({self.name}, {self.type})"
+        
+        return f"FunctionDeclaration({self.name}, {self.parameters}, {self.type})"
+    
+@dataclass
 class FunctionCall:
     def __init__ (self, name, arguments):
         self.name = name

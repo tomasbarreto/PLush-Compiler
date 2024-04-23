@@ -47,6 +47,13 @@ def parse(tokens):
             type = TYPE()
             instructions = FUNCTIONp()
 
+            if not instructions:
+                return FunctionDefinition(
+                    name = name[1],
+                    parameters = parameters,
+                    type = type
+                )
+
             return FunctionDeclaration(
                 name = name[1],
                 parameters = parameters,
@@ -62,8 +69,9 @@ def parse(tokens):
             instructions = FUNCTION_STATEMENT_LIST(list())
             eat('RCURLYPAREN')
             return InstructionList(instructions)
-        elif lookahead() == 'COMMA':
-            eat('COMMA')
+        elif lookahead() == 'SEMICOLON':
+            eat('SEMICOLON')
+            return list()
         else:
             raise ParsingException()
         
