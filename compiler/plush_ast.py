@@ -103,9 +103,9 @@ class FunctionDefinition:
 
     def __repr__(self) -> str:
         if self.parameters is None:
-            return f"FunctionDeclaration({self.name}, {self.type})"
+            return f"FunctionDefinition({self.name}, {self.type})"
         
-        return f"FunctionDeclaration({self.name}, {self.parameters}, {self.type})"
+        return f"FunctionDefinition({self.name}, {self.parameters}, {self.type})"
     
 @dataclass
 class FunctionCall:
