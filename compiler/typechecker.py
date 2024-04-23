@@ -123,13 +123,22 @@ def verify(node, ctx: Context):
     elif isinstance(node, FunctionDeclaration):
         if ctx.has_function(node.name):
             raise TypeError(f"Funcao {node.name} ja foi declarada")
+        
+        if not ctx.has_function_def(node.name):
+            # Save the function for function call typecheking
+            ctx.enter_function_scope()
+            ctx.set_type_function(node.name, node.type)      
 
-        # Save the function for function call typecheking
-        ctx.enter_function_scope()
-        ctx.set_type_function(node.name, node.type)      
+            for param in node.parameters.parameters:
+                ctx.set_type_function(param.name, param.type)
+        else:
+            index_param = 0
 
-        for param in node.parameters.parameters:
-            ctx.set_type_function(param.name, param.type)
+            # Check if the function declaration matches the function definition
+            for param in node.parameters.parameters:
+                if ctx.get_type_function_def_param(node.name, index_param) != param.type:
+                    raise TypeError(f"Tipos incompatíveis na função {node.name}")
+                index_param += 1
 
         # typecheck the actual function declaration
 
@@ -144,3 +153,13 @@ def verify(node, ctx: Context):
             verify(instruction, ctx)
 
         ctx.exit_scope()
+
+    elif isinstance(node, FunctionDefinition):
+        if ctx.has_function_def(node.name):
+            raise TypeError(f"Funcao {node.name} ja foi definida")
+        
+        ctx.enter_function_def_scope()
+        ctx.set_type_function_def(node.name, node.type)      
+
+        for param in node.parameters.parameters:
+            ctx.set_type_function_def(param.name, param.type)
