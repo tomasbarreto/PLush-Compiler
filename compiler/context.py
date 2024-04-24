@@ -51,6 +51,14 @@ class Context(object):
                 wanted_scope = scope
         
         return list(wanted_scope.items())[param_position + 1][1]
+
+    def get_type_function(self, function_name):
+        for scope in self.function_stack:
+            first_key = next(iter(scope))
+            if function_name == first_key:
+                wanted_scope = scope
+        
+        return wanted_scope[function_name]
     
     # functions for function definition stack
     def set_type_function_def(self, name, value):

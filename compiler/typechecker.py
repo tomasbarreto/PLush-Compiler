@@ -174,3 +174,17 @@ def verify(node, ctx: Context):
 
         for param in node.parameters.parameters:
             ctx.set_type_function_def(param.name, param.type)
+    elif isinstance(node, FunctionCall):
+        if not ctx.has_function(node.name):
+            raise TypeError(f"Function {node.name} not declared!")
+        
+        index_param = 0
+
+        for argument in node.arguments.arguments:
+            if type_map[ctx.get_type_function_param(node.name, index_param)] != type(argument.value.expr):
+                raise TypeError(f"Incompatible types in function call {node.name}!")
+            index_param += 1
+
+        return type_map[ctx.get_type_function(node.name)]
+
+    
