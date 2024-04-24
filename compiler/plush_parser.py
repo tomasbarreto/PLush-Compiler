@@ -254,6 +254,8 @@ def parse(tokens):
     def VALUE():
         if lookahead() == 'STRING':
             return String(eat('STRING')[1])
+        elif lookahead() == 'CHAR':
+            return Char(eat('CHAR')[1])
         elif lookahead() == 'INT':
             return Int(eat('INT')[1])
         elif lookahead() == 'FLOAT':
