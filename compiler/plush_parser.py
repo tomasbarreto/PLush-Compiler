@@ -32,7 +32,7 @@ def parse(tokens):
             result.append(FUNCTION())
             STATEMENT_FUNCTION_LISTp(result)
         else:
-            pass
+            raise ParsingException()
         
         return InstructionList(result)
         
@@ -206,8 +206,6 @@ def parse(tokens):
     def STATEMENT_FUNCTION_LISTp(result):
         if lookahead() in ['VAR', 'VAL', 'IF', 'WHILE', 'FUNCTION', 'IDENTIFIER']:
             STATEMENT_FUNCTION_LIST(result)
-        if lookahead() == 'RETURN':
-            raise
         else:
             pass
 
