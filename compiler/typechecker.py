@@ -23,23 +23,23 @@ def verify(node, ctx: Context):
     elif isinstance(node, VariableDeclaration):
         # Check if the variable is already declared
         if ctx.has_var(node.name):
-            raise TypeError(f"Variavel {node.name} ja foi declarada")
+            raise TypeError(f"Variable {node.name} already declared!")
         # Set the variable type in the context
         ctx.set_type(node.name, node.type)
         # Verify the value of the variable
         expr_type = verify(node.value, ctx)
 
         if expr_type != type_map[node.type]:
-            raise TypeError(f"Tipos incompatíveis: {expr_type} e {type_map[node.type]}")
+            raise TypeError(f"Incompatible types: {expr_type} and {type_map[node.type]}")
     elif isinstance(node, VariableAssignment):
         # Check if the variable is not declared
         if not ctx.has_var(node.name):
-            raise TypeError(f"Variavel {node.name} nao foi declarada")
+            raise TypeError(f"Variable {node.name} not declared!")
         # Verify the value of the variable
         expr_type = verify(node.value, ctx)
 
         if expr_type != type_map[ctx.get_type(node.name)]:
-            raise TypeError(f"Tipos incompatíveis: {expr_type} e {type_map[ctx.get_type(node.name)]}")
+            raise TypeError(f"Incompatible types: {expr_type} and {type_map[ctx.get_type(node.name)]}")
     elif isinstance(node, Expression):
         return verify(node.expr, ctx)
     elif isinstance(node, (
@@ -51,13 +51,13 @@ def verify(node, ctx: Context):
         left = verify(node.left, ctx)
 
         if right != Boolean:
-            raise TypeError(f"Tipo incompatível: {right}")
+            raise TypeError(f"Incompatible type: {right}")
 
         if left != Boolean:
-            raise TypeError(f"Tipo incompatível: {left}")
+            raise TypeError(f"Incompatible type: {left}")
 
         if type(right) != type(left):
-            raise TypeError(f"Tipos incompatíveis: {type(right)} e {type(left)}")
+            raise TypeError(f"Incompatible types: {type(right)} and {type(left)}")
         
         return right
     elif isinstance(node, (
@@ -82,13 +82,13 @@ def verify(node, ctx: Context):
         left = verify(node.left, ctx)
 
         if right not in (Int, Float, Expression):
-            raise TypeError(f"Tipo incompatível: {right}")
+            raise TypeError(f"Incompatible type: {right}")
         
         if left not in (Int, Float, Expression):
-            raise TypeError(f"Tipo incompatível: {left}")
+            raise TypeError(f"Incompatible type: {left}")
 
         if right != left:
-            raise TypeError(f"Tipos incompatíveis: {right} e {left}")
+            raise TypeError(f"Incompatible types: {right} and {left}")
         
         return right
     elif isinstance(node, Unary):
@@ -103,7 +103,7 @@ def verify(node, ctx: Context):
         return type(node)
     elif isinstance(node, VariableAccess):
         if not ctx.has_var(node.name):
-            raise TypeError(f"Variavel {node.name} nao foi declarada")
+            raise TypeError(f"Variable {node.name} not declared!")
         return type_map[ctx.get_type(node.name)]
     elif isinstance(node, IfStatement):
         expr_type = verify(node.condition, ctx)
@@ -122,7 +122,7 @@ def verify(node, ctx: Context):
             verify(instruction, ctx)
     elif isinstance(node, FunctionDeclaration):
         if ctx.has_function(node.name):
-            raise TypeError(f"Funcao {node.name} ja foi declarada")
+            raise TypeError(f"Function {node.name} already declared!")
         
         if not ctx.has_function_def(node.name):
             # Save the function for function call typecheking
@@ -137,7 +137,7 @@ def verify(node, ctx: Context):
             # Check if the function declaration matches the function definition
             for param in node.parameters.parameters:
                 if ctx.get_type_function_def_param(node.name, index_param) != param.type:
-                    raise TypeError(f"Tipos incompatíveis na função {node.name}")
+                    raise TypeError(f"Incompatible types in function declaration {node.name}!")
                 index_param += 1
 
         # typecheck the actual function declaration
@@ -156,7 +156,10 @@ def verify(node, ctx: Context):
 
     elif isinstance(node, FunctionDefinition):
         if ctx.has_function_def(node.name):
-            raise TypeError(f"Funcao {node.name} ja foi definida")
+            raise TypeError(f"Function {node.name} already defined!")
+        
+        if ctx.has_function(node.name):
+            raise TypeError(f"Cannot define a function that was already declared - function {node.name}")
         
         ctx.enter_function_def_scope()
         ctx.set_type_function_def(node.name, node.type)      
