@@ -120,6 +120,14 @@ def verify(node, ctx: Context):
     elif isinstance(node, ElseBlock):
         for instruction in node.instructions:
             verify(instruction, ctx)
+    elif isinstance(node, WhileStatement):
+        expr_type = verify(node.condition, ctx)
+
+        if expr_type != Boolean:
+            raise TypeError(f"If conditions must have type booean! Not type {expr_type}!")
+
+        for instruction in node.code_block:
+            verify(instruction, ctx)
     elif isinstance(node, FunctionDeclaration):
         if ctx.has_function(node.name):
             raise TypeError(f"Function {node.name} already declared!")
