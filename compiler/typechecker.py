@@ -22,7 +22,7 @@ def verify(node, ctx: Context):
             verify(instruction, ctx)
     elif isinstance(node, VariableDeclaration):
         # Check if the variable is already declared
-        if ctx.has_var(node.name):
+        if ctx.has_var_in_current_scope(node.name):
             raise TypeError(f"Variable {node.name} already declared!")
         # Set the variable type in the context
         ctx.set_type(node.name, node.type)
