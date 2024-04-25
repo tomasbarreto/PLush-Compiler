@@ -60,6 +60,13 @@ class Context(object):
         
         return wanted_scope[function_name]
     
+    def get_function_nr_args(self, function_name):
+        for scope in self.function_stack:
+            first_key = next(iter(scope))
+            if function_name == first_key:
+                wanted_scope = scope
+                return len(wanted_scope) - 1
+        
     # functions for function definition stack
     def set_type_function_def(self, name, value):
         scope = self.function_def_stack[0]
@@ -82,3 +89,10 @@ class Context(object):
                 wanted_scope = scope
         
         return list(wanted_scope.items())[param_position + 1][1]
+    
+    def get_function_def_nr_args(self, function_name):
+        for scope in self.function_def_stack:
+            first_key = next(iter(scope))
+            if function_name == first_key:
+                wanted_scope = scope
+                return len(wanted_scope) - 1
