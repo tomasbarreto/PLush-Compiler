@@ -178,13 +178,29 @@ def verify(node, ctx: Context):
         if not ctx.has_function(node.name):
             raise TypeError(f"Function {node.name} not declared!")
         
+        if ctx.get_type_function(node.name) == 'void':
+            raise TypeError(f"Function {node.name} returns void!")
+        
         index_param = 0
 
         for argument in node.arguments.arguments:
-            if type_map[ctx.get_type_function_param(node.name, index_param)] != type(argument.value.expr):
+            if type_map[ctx.get_type_function_param(node.name, index_param)] != verify(argument.value.expr, ctx):
                 raise TypeError(f"Incompatible types in function call {node.name}!")
             index_param += 1
 
         return type_map[ctx.get_type_function(node.name)]
+    elif isinstance(node, ProcedureCall):
+        if not ctx.has_function(node.name):
+            raise TypeError(f"Function {node.name} not declared!")
+        
+        if ctx.get_type_function(node.name) != 'void':
+            raise TypeError(f"Procedure {node.name} must be of type void!")
+
+        index_param = 0
+
+        for argument in node.arguments.arguments:
+            if type_map[ctx.get_type_function_param(node.name, index_param)] != verify(argument.value.expr, ctx):
+                raise TypeError(f"Incompatible types in function call {node.name}!")
+            index_param += 1
 
     
