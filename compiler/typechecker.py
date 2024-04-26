@@ -27,8 +27,16 @@ def verify(node, ctx: Context):
         # Verify the value of the variable
         expr_type = verify(node.value, ctx)
 
-        if expr_type != type_map[node.type]:
-            raise TypeError(f"Incompatible types: {expr_type} and {type_map[node.type]}")
+        if node.type[0] == '[':
+            node_type = node.type
+        else:
+            node_type = type_map[node.type]
+
+        if isinstance(expr_type, str) and expr_type[0] == '[':
+            if expr_type != node.type:
+                raise TypeError(f"Incompatible types: {expr_type} and {node.type}")
+        elif expr_type != node_type:
+            raise TypeError(f"Incompatible types: {expr_type} and {node_type}")
         
         # Save the variable in the context
         ctx.set_type(node.name, node.type)
@@ -105,6 +113,12 @@ def verify(node, ctx: Context):
     elif isinstance(node, VariableAccess):
         if not ctx.has_var(node.name):
             raise TypeError(f"Variable {node.name} not declared!")
+        
+        variable_type = ctx.get_type(node.name)
+
+        if variable_type[0] == '[':
+            return variable_type
+        
         return type_map[ctx.get_type(node.name)]
     elif isinstance(node, IfStatement):
         expr_type = verify(node.condition, ctx)
@@ -216,8 +230,13 @@ def verify(node, ctx: Context):
         
         if nr_args != 0:
             raise TypeError(f"Function {node.name} expects more arguments!")
+        
+        function_type = ctx.get_type_function(node.name)
 
-        return type_map[ctx.get_type_function(node.name)]
+        if function_type[0] == '[':
+            return function_type
+
+        return type_map[function_type]
     elif isinstance(node, ProcedureCall):
         if not ctx.has_function(node.name):
             raise TypeError(f"Function {node.name} not declared!")
@@ -242,5 +261,45 @@ def verify(node, ctx: Context):
 
         if nr_args != 0:
             raise TypeError(f"Function {node.name} expects more arguments!")
+    elif isinstance(node, ArrayAccess):
+        if isinstance(node.identifier, VariableAccess):
+            if not ctx.has_var(node.identifier.name):
+                raise TypeError(f"Variable {node.identifier.name} not declared!")
+            idenfier_type = ctx.get_type(node.identifier.name)
+        elif isinstance(node.identifier, FunctionCall):
+            if not ctx.has_function(node.identifier.name):
+                raise TypeError(f"Function {node.identifier.name} not declared!")
+            idenfier_type = ctx.get_type_function(node.identifier.name)
 
+        if idenfier_type[0] != '[':
+            raise TypeError(f"Variable {node.identifier.name} is not an array!")
+        
+        rec_l_paren_counter = 0
+        index = 0
+
+        while idenfier_type[index] == '[':
+            rec_l_paren_counter += 1
+            index += 1
+
+        number_input_indexes = len(node.indexes.indexes)
+
+        if number_input_indexes > rec_l_paren_counter:
+            raise TypeError(f"Too many indexes in array access {node.identifier.name}!")
+        
+        return_type = idenfier_type
+
+        while number_input_indexes > 0:
+            return_type = return_type[1:-1]
+            number_input_indexes -= 1
+        
+        if return_type[0] == '[':
+            return return_type
+        
+        return type_map[return_type]
+    elif isinstance(node, ArrayVariableAssigment):
+        array_variable_type = verify(node.left, ctx)
+        value_type = verify(node.right, ctx)
+
+        if array_variable_type != value_type:
+            raise TypeError(f"Incompatible types: {array_variable_type} and {value_type}")
     
