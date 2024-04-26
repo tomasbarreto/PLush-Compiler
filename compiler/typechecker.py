@@ -34,9 +34,9 @@ def verify(node, ctx: Context):
 
         if isinstance(expr_type, str) and expr_type[0] == '[':
             if expr_type != node.type:
-                raise TypeError(f"Incompatible types: {expr_type} and {node.type}")
+                raise TypeError(f"Incompatible types: {node.type} and {expr_type}")
         elif expr_type != node_type:
-            raise TypeError(f"Incompatible types: {expr_type} and {node_type}")
+            raise TypeError(f"Incompatible types: {node_type} and {expr_type}")
         
         # Save the variable in the context
         ctx.set_type(node.name, node.type)
@@ -47,8 +47,13 @@ def verify(node, ctx: Context):
         # Verify the value of the variable
         expr_type = verify(node.value, ctx)
 
-        if expr_type != type_map[ctx.get_type(node.name)]:
-            raise TypeError(f"Incompatible types: {expr_type} and {type_map[ctx.get_type(node.name)]}")
+        if ctx.get_type(node.name)[0] == '[':
+            var_type = ctx.get_type(node.name)
+        else:
+            var_type = type_map[ctx.get_type(node.name)]
+
+        if expr_type != var_type:
+            raise TypeError(f"Incompatible types: {var_type} and {expr_type}")
     elif isinstance(node, Expression):
         return verify(node.expr, ctx)
     elif isinstance(node, (
