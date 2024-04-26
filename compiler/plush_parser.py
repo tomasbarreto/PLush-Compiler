@@ -345,18 +345,18 @@ def parse(tokens):
     def ARRAY():
         if lookahead() == 'LRECPAREN':
             eat('LRECPAREN')
-            array_content = ARRAY_CONTENT()
+            array_content = ARRAY_CONTENT(list())
             eat('RRECPAREN')
 
             return array_content
         else:
             raise ParsingException()
         
-    def ARRAY_CONTENT():
+    def ARRAY_CONTENT(content=list()):
         if lookahead() == 'RRECPAREN':
             pass
         else:
-            return VALUE_LIST(list())
+            return VALUE_LIST(content)
 
     def VALUE_LIST(content=list()):
         if lookahead() in ['STRING', 'INT', 'FLOAT', 'BOOLEAN', 'IDENTIFIER']:
@@ -379,10 +379,10 @@ def parse(tokens):
         else:
             pass
     
-    def VALUE_LISTp2():
+    def VALUE_LISTp2(content):
         if lookahead() == 'COMMA':
             eat('COMMA')
-            ARRAY_CONTENT()
+            ARRAY_CONTENT(content)
         else:
             pass
 
