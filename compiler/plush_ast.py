@@ -350,15 +350,12 @@ class FunctionCall:
     
 @dataclass
 class ArrayAccess:
-    def __init__ (self, name, function_parameters=None, indexes=None):
-        self.name = name
-        self.function_parameters = function_parameters
+    def __init__ (self, identifier, indexes=None):
+        self.identifier = identifier
         self.indexes = indexes
 
     def __repr__(self) -> str:
-        if self.function_parameters is None:
-            return f"ArrayAccess({self.name}, {self.indexes})"
-        return f"ArrayAccess({self.name}, {self.function_parameters}, {self.indexes})"    
+        return f"ArrayAccess({self.identifier}, {self.indexes})"    
 
 @dataclass
 class ParameterList:
