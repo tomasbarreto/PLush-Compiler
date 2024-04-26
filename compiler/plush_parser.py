@@ -181,7 +181,7 @@ def parse(tokens):
 
             return ArrayVariableAssigment(
                 left = ArrayAccess(
-                    name = name[1],
+                    identifier = VariableAccess(name[1]),
                     indexes = indexes
                 ),
                 right = expr
@@ -245,9 +245,7 @@ def parse(tokens):
             type = TYPE()
             eat('RRECPAREN')
 
-            return ArrayType(
-                type = type
-            )
+            return '[' + type + ']' 
         else:
             raise ParsingException()
         
@@ -266,22 +264,22 @@ def parse(tokens):
             return ARRAY()
         elif lookahead() == 'IDENTIFIER':
             name = eat('IDENTIFIER')
-            function = FUNCTION_CALL()
+            parameters = FUNCTION_CALL()
             indexes = VALUEp()
 
-            if function and indexes:
+            if parameters and indexes:
                 return ArrayAccess(
-                    name = FunctionCall(name[1], function),
+                    identifier = FunctionCall(name[1], parameters),
                     indexes = indexes
                 )
-            elif function and not indexes:
+            elif parameters and not indexes:
                 return FunctionCall(
                     name = name[1],
-                    arguments = function
+                    arguments = parameters
                 )
             elif indexes:
                 return ArrayAccess(
-                    name = name[1],
+                    identifier = VariableAccess(name[1]),
                     indexes = indexes
                 )
             else:
