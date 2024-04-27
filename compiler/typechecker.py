@@ -228,7 +228,12 @@ def verify(node, ctx: Context):
             raise TypeError(f"Function {node.name} expects less arguments!")
 
         for argument in node.arguments.arguments:
-            if type_map[ctx.get_type_function_param(node.name, index_arg)] != verify(argument.value.expr, ctx):
+            if ctx.get_type_function_param(node.name, index_arg)[0] == '[':
+                param_type = ctx.get_type_function_param(node.name, index_arg)
+            else:
+                param_type = type_map[ctx.get_type_function_param(node.name, index_arg)]
+
+            if param_type != verify(argument.value.expr, ctx):
                 raise TypeError(f"Incompatible types in function call {node.name}!")
             index_arg += 1
             nr_args -= 1
@@ -291,6 +296,10 @@ def verify(node, ctx: Context):
         if number_input_indexes > rec_l_paren_counter:
             raise TypeError(f"Too many indexes in array access {node.identifier.name}!")
         
+        for index in node.indexes.indexes:
+            if verify(index.value, ctx) != Int:
+                raise TypeError(f"Array indexes must be of type int!")
+        
         return_type = idenfier_type
 
         while number_input_indexes > 0:
@@ -307,4 +316,42 @@ def verify(node, ctx: Context):
 
         if array_variable_type != value_type:
             raise TypeError(f"Incompatible types: {array_variable_type} and {value_type}")
+    elif isinstance(node, Array):
+        return list(getArrayType(node))
+    
+def getArrayType(array):
+    seen_elements = set()
+
+    def deleteRepeatedTypes(array):
+        if isinstance(array, Array):
+            for i in range(len(array.content)):
+                array.content[i] = deleteRepeatedTypes(array.content[i])
+            
+            seen_elements.clear()
+        else:
+            type = type_to_str(array)
+            if type in seen_elements:
+                return None
+            seen_elements.add(type)
+            return type
+
+        result_set = set()
+        for elem in array.content:
+            if elem not in result_set:
+                result_set.add(elem)
+        return result_set
+    
+    return deleteRepeatedTypes(array)
+
+def type_to_str(node):
+    if isinstance(node, Int):
+        return 'int'
+    elif isinstance(node, Float):
+        return 'float'
+    elif isinstance(node, String):
+        return 'string'
+    elif isinstance(node, Char):
+        return 'char'
+    elif isinstance(node, Boolean):
+        return 'boolean'
     
