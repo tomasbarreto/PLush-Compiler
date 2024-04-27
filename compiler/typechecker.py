@@ -1,15 +1,6 @@
 from context import Context
 from plush_ast import *
 
-type_map = {
-    'int': Int,
-    'float': Float,
-    'string': String,
-    'char': Char,
-    'boolean': Boolean,
-    'array': Array,
-}
-
 class TypeError(Exception):
     pass
 
@@ -27,10 +18,7 @@ def verify(node, ctx: Context):
         # Verify the value of the variable
         expr_type = verify(node.value, ctx)
 
-        if node.type[0] == '[':
-            node_type = node.type
-        else:
-            node_type = type_map[node.type]
+        node_type = node.type
 
         if isinstance(expr_type, str) and expr_type[0] == '[':
             if expr_type != node.type:
@@ -47,10 +35,7 @@ def verify(node, ctx: Context):
         # Verify the value of the variable
         expr_type = verify(node.value, ctx)
 
-        if ctx.get_type(node.name)[0] == '[':
-            var_type = ctx.get_type(node.name)
-        else:
-            var_type = type_map[ctx.get_type(node.name)]
+        var_type = ctx.get_type(node.name)
 
         if expr_type != var_type:
             raise TypeError(f"Incompatible types: {var_type} and {expr_type}")
@@ -64,14 +49,14 @@ def verify(node, ctx: Context):
         right = verify(node.right, ctx)
         left = verify(node.left, ctx)
 
-        if right != Boolean:
+        if right != "boolean":
             raise TypeError(f"Incompatible type: {right}")
 
-        if left != Boolean:
+        if left != "boolean":
             raise TypeError(f"Incompatible type: {left}")
 
-        if type(right) != type(left):
-            raise TypeError(f"Incompatible types: {type(right)} and {type(left)}")
+        if right != left:
+            raise TypeError(f"Incompatible types: {right} and {left}")
         
         return right
     elif isinstance(node, (
@@ -85,7 +70,7 @@ def verify(node, ctx: Context):
         if right != left:
             raise TypeError(f"Tipos incompatíveis: {right} e {left}")
         
-        return Boolean
+        return "boolean"
     elif isinstance(node, (
         Add,
         Sub,
@@ -95,10 +80,10 @@ def verify(node, ctx: Context):
         right = verify(node.right, ctx)
         left = verify(node.left, ctx)
 
-        if right not in (Int, Float, Expression):
+        if right not in ("int", "float", Expression):
             raise TypeError(f"Incompatible type: {right}")
         
-        if left not in (Int, Float, Expression):
+        if left not in ("int", "float", Expression):
             raise TypeError(f"Incompatible type: {left}")
 
         if right != left:
@@ -114,7 +99,7 @@ def verify(node, ctx: Context):
         Char,
         Boolean
     )):
-        return type(node)
+        return type_to_str(type(node))
     elif isinstance(node, VariableAccess):
         if not ctx.has_var(node.name):
             raise TypeError(f"Variable {node.name} not declared!")
@@ -124,11 +109,11 @@ def verify(node, ctx: Context):
         if variable_type[0] == '[':
             return variable_type
         
-        return type_map[ctx.get_type(node.name)]
+        return ctx.get_type(node.name)
     elif isinstance(node, IfStatement):
         expr_type = verify(node.condition, ctx)
 
-        if expr_type != Boolean:
+        if expr_type != "boolean":
             raise TypeError(f"If conditions must have type booean! Not type {expr_type}!")
 
         verify(node.then_block, ctx)
@@ -143,7 +128,7 @@ def verify(node, ctx: Context):
     elif isinstance(node, WhileStatement):
         expr_type = verify(node.condition, ctx)
 
-        if expr_type != Boolean:
+        if expr_type != "boolean":
             raise TypeError(f"If conditions must have type booean! Not type {expr_type}!")
 
         for instruction in node.code_block:
@@ -228,10 +213,7 @@ def verify(node, ctx: Context):
             raise TypeError(f"Function {node.name} expects less arguments!")
 
         for argument in node.arguments.arguments:
-            if ctx.get_type_function_param(node.name, index_arg)[0] == '[':
-                param_type = ctx.get_type_function_param(node.name, index_arg)
-            else:
-                param_type = type_map[ctx.get_type_function_param(node.name, index_arg)]
+            param_type = ctx.get_type_function_param(node.name, index_arg)
 
             if param_type != verify(argument.value.expr, ctx):
                 raise TypeError(f"Incompatible types in function call {node.name}!")
@@ -243,10 +225,7 @@ def verify(node, ctx: Context):
         
         function_type = ctx.get_type_function(node.name)
 
-        if function_type[0] == '[':
-            return function_type
-
-        return type_map[function_type]
+        return function_type
     elif isinstance(node, ProcedureCall):
         if not ctx.has_function(node.name):
             raise TypeError(f"Function {node.name} not declared!")
@@ -264,7 +243,7 @@ def verify(node, ctx: Context):
             raise TypeError(f"Procedure {node.name} expects less arguments!")
         
         for argument in node.arguments.arguments:
-            if type_map[ctx.get_type_function_param(node.name, index_param)] != verify(argument.value.expr, ctx):
+            if ctx.get_type_function_param(node.name, index_param) != verify(argument.value.expr, ctx):
                 raise TypeError(f"Incompatible types in function call {node.name}!")
             index_param += 1
             nr_args -= 1
@@ -297,7 +276,7 @@ def verify(node, ctx: Context):
             raise TypeError(f"Too many indexes in array access {node.identifier.name}!")
         
         for index in node.indexes.indexes:
-            if verify(index.value, ctx) != Int:
+            if verify(index.value, ctx) != "int":
                 raise TypeError(f"Array indexes must be of type int!")
         
         return_type = idenfier_type
@@ -306,10 +285,7 @@ def verify(node, ctx: Context):
             return_type = return_type[1:-1]
             number_input_indexes -= 1
         
-        if return_type[0] == '[':
-            return return_type
-        
-        return type_map[return_type]
+        return return_type
     elif isinstance(node, ArrayVariableAssigment):
         array_variable_type = verify(node.left, ctx)
         value_type = verify(node.right, ctx)
@@ -317,41 +293,97 @@ def verify(node, ctx: Context):
         if array_variable_type != value_type:
             raise TypeError(f"Incompatible types: {array_variable_type} and {value_type}")
     elif isinstance(node, Array):
-        return list(getArrayType(node))
-    
-def getArrayType(array):
+        result = list_to_string(covert_types_to_string(getArrayType(node, ctx)))
+
+        processed_result = delete_duplicates(result)
+
+        return processed_result
+
+
+def getArrayType(array, ctx):
     seen_elements = set()
 
     def deleteRepeatedTypes(array):
         if isinstance(array, Array):
+            seen_elements.clear()
             for i in range(len(array.content)):
                 array.content[i] = deleteRepeatedTypes(array.content[i])
-            
-            seen_elements.clear()
         else:
-            type = type_to_str(array)
+            type = verify(array, ctx)
             if type in seen_elements:
                 return None
             seen_elements.add(type)
             return type
 
-        result_set = set()
-        for elem in array.content:
-            if elem not in result_set:
-                result_set.add(elem)
-        return result_set
+        return remove_duplicates(remove_nones(array.content))
     
     return deleteRepeatedTypes(array)
 
-def type_to_str(node):
-    if isinstance(node, Int):
-        return 'int'
-    elif isinstance(node, Float):
-        return 'float'
-    elif isinstance(node, String):
-        return 'string'
-    elif isinstance(node, Char):
-        return 'char'
-    elif isinstance(node, Boolean):
-        return 'boolean'
+def remove_nones(lst):
+    if isinstance(lst, list):
+        return [remove_nones(item) for item in lst if item is not None]
+    else:
+        return lst
     
+def remove_duplicates(lst):
+    seen = set()
+    result = []
+
+    for item in lst:
+        if isinstance(item, list):
+            items = remove_duplicates(item)
+            items = tuple(items)
+        else:
+            items = item
+
+        if items not in seen:
+            result.append(item)
+            seen.add(items)
+
+    return result
+
+def type_to_str(node):
+    if node == Int:
+        return 'int'
+    elif node == Float:
+        return 'float'
+    elif node == String:
+        return 'string'
+    elif node == Char:
+        return 'char'
+    elif node == Boolean:
+        return 'boolean'
+    return node
+
+def list_to_string(lst):
+    def convert_to_string(item):
+        if isinstance(item, list):
+            inner_strings = [convert_to_string(sub_item) for sub_item in item]
+            return '[' + ','.join(inner_strings) + ']'
+        else:
+            return str(item)
+
+    return convert_to_string(lst)
+    
+def covert_types_to_string(lst):
+    def convert_to_type_string(item):
+        if isinstance(item, list):
+            inner_types = [convert_to_type_string(sub_item) for sub_item in item]
+            return inner_types
+        else:
+            return type_to_str(item)
+
+    return convert_to_type_string(lst)
+
+def delete_duplicates(lst):
+    content = lst[1:-1].split(',')
+
+    seen = set()
+    result = []
+
+    for item in content:
+        if item not in seen:
+            result.append(item)
+            seen.add(item)
+    
+    return '[' + ', '.join(result) + ']'
