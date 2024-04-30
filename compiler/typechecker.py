@@ -91,7 +91,7 @@ def verify(node, ctx: Context):
         
         return right
     elif isinstance(node, Unary):
-        verify(node.expr, ctx)
+        return verify(node.expr, ctx)
     elif isinstance(node, (
         Int,
         Float,
@@ -256,8 +256,7 @@ def verify(node, ctx: Context):
                 raise TypeError(f"Variable {node.identifier.name} not declared!")
             idenfier_type = ctx.get_type(node.identifier.name)
         elif isinstance(node.identifier, FunctionCall):
-            if not ctx.has_function(node.identifier.name):
-                raise TypeError(f"Function {node.identifier.name} not declared!")
+            verify(node.identifier, ctx)
             idenfier_type = ctx.get_type_function(node.identifier.name)
 
         if idenfier_type[0] != '[':

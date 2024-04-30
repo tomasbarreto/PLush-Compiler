@@ -325,7 +325,7 @@ def parse(tokens):
 
     def FUNCTION_PARAMETER_LIST(arguments=list()):
 
-        if lookahead() in ['STRING', 'INT', 'FLOAT', 'BOOLEAN', 'LRECPAREN', 'IDENTIFIER']:
+        if lookahead() in ['STRING', 'INT', 'FLOAT', 'BOOLEAN', 'LRECPAREN', 'IDENTIFIER', 'SUBTRACTIONOPERATOR', 'ADDICTIONOPERATOR', 'NEG', 'LPAREN']:
             arguments.append(Argument(OPERATION()))
             FUNCTION_PARAMETER_LISTp(arguments)
         else:
@@ -357,7 +357,7 @@ def parse(tokens):
             return VALUE_LIST(content)
 
     def VALUE_LIST(content=list()):
-        if lookahead() in ['STRING', 'INT', 'FLOAT', 'BOOLEAN', 'IDENTIFIER']:
+        if lookahead() in ['STRING', 'INT', 'FLOAT', 'BOOLEAN', 'IDENTIFIER', 'SUBTRACTIONOPERATOR', 'ADDICTIONOPERATOR', 'NEG', 'LPAREN']:
             content.append(OPERATION())
             VALUE_LISTp(content)
 
