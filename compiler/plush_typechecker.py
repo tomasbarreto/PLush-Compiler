@@ -40,7 +40,10 @@ def verify(node, ctx: Context):
         if expr_type != var_type:
             raise TypeError(f"Incompatible types: {var_type} and {expr_type}")
     elif isinstance(node, Expression):
-        return verify(node.expr, ctx)
+        expr_type = verify(node.expr, ctx)
+        node.type = expr_type
+        
+        return expr_type
     elif isinstance(node, (
         Or,
         And
@@ -299,6 +302,8 @@ def verify(node, ctx: Context):
         processed_result = delete_duplicates(result)
 
         return processed_result
+    
+    return node
 
 
 def getArrayType(array, ctx):

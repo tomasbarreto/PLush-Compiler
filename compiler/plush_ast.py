@@ -154,11 +154,14 @@ class Index:
     
 @dataclass
 class Expression:
-    def __init__ (self, expr):
+    def __init__ (self, expr, type=None):
         self.expr = expr
+        self.type = type
 
     def __repr__(self) -> str:
-        return f"{self.expr}"
+        if self.type is None:
+            return f"{self.expr}"
+        return f"Expression({self.expr}, {self.type})"
 
 @dataclass
 class Mult:
