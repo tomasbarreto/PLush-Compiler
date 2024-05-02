@@ -455,7 +455,7 @@ def parse(tokens):
 
             return Or(
                 operator = operator,
-                left = left,
+                left = Expression(left),
                 right = right
             )
         else:
@@ -471,7 +471,7 @@ def parse(tokens):
 
             return And(
                 operator = operator,
-                left = left,
+                left = Expression(left),
                 right = right
             )
         else:
@@ -515,7 +515,7 @@ def parse(tokens):
 
             return Equality(
                 operator = operator,
-                left = left,
+                left = Expression(left),
                 right = right
             )
         else:
@@ -531,7 +531,7 @@ def parse(tokens):
 
             return Compare(
                 operator = operator,
-                left = left,
+                left = Expression(left),
                 right = right
             )
         else:
@@ -547,7 +547,7 @@ def parse(tokens):
 
             return Add(
                 operator = operator,
-                left = left,
+                left = Expression(left),
                 right = right
             )
         elif lookahead() == 'SUBTRACTIONOPERATOR':
@@ -556,7 +556,7 @@ def parse(tokens):
 
             return Sub(
                 operator = operator,
-                left = left,
+                left = Expression(left),
                 right = right
             )
         else:
@@ -572,7 +572,7 @@ def parse(tokens):
 
             return Mult(
                 operator = operator,
-                left = left,
+                left = Expression(left),
                 right = right
             )
         else:
