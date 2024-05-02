@@ -8,7 +8,7 @@ def interpretor(node, ctx: Context):
         for instruction in node.instructions:
             interpretor(instruction, ctx)
     elif isinstance(node, FunctionDeclaration):
-        interpretor(node.instructions, ctx)
+        ctx.set_type_function(node.name, node.instructions)
     elif isinstance(node, VariableDeclaration):
         if ctx.has_var_in_current_scope(node.name):
             raise TypeError(f"Variable {node.name} already declared!")
@@ -47,5 +47,12 @@ def interpretor(node, ctx: Context):
     elif isinstance(node, ProcedureCall):
         if node.name == "print":
             print(ctx.get_type(node.arguments.arguments[0].value.expr.name), ctx)
+    elif isinstance(node, FunctionCall):
+        if ctx.has_function(node.name):
+            interpretor(ctx.get_function(node.name), ctx)
+
+            # verify return
+        else:
+            raise TypeError(f"Function {node.name} not declared!")
     else:
         pass
