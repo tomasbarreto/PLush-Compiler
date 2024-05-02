@@ -107,11 +107,6 @@ def verify(node, ctx: Context):
         if not ctx.has_var(node.name):
             raise TypeError(f"Variable {node.name} not declared!")
         
-        variable_type = ctx.get_type(node.name)
-
-        if variable_type[0] == '[':
-            return variable_type
-        
         return ctx.get_type(node.name)
     elif isinstance(node, IfStatement):
         expr_type = verify(node.condition, ctx)
@@ -200,22 +195,39 @@ def verify(node, ctx: Context):
             for param in node.parameters.parameters:
                 ctx.set_type_function_def(param.name, param.type)
     elif isinstance(node, FunctionCall):
-        if not ctx.has_function_def(node.name):
-            raise TypeError(f"Function {node.name} not defined!")
+        if not ctx.has_function_def(node.name) and not ctx.has_function(node.name):
+            raise TypeError(f"Function {node.name} not defined nor declared!")
         
-        if ctx.get_type_function_def(node.name) == 'void':
-            raise TypeError(f"Function {node.name} returns void!")
-        
-        nr_args = ctx.get_function_def_nr_args(node.name)
-        index_arg = 0
+        if ctx.has_function_def(node.name):
+            if ctx.get_type_function_def(node.name) == 'void':
+                raise TypeError(f"Function {node.name} returns void!")
+            
+            nr_args = ctx.get_function_def_nr_args(node.name)
+            index_arg = 0
 
-        if node.arguments.arguments and nr_args == 0:
-            raise TypeError(f"Function {node.name} does not expect arguments!")
+            if node.arguments.arguments and nr_args == 0:
+                raise TypeError(f"Function {node.name} does not expect arguments!")
 
-        if len(node.arguments.arguments) > nr_args:
-            raise TypeError(f"Function {node.name} expects less arguments!")
+            if len(node.arguments.arguments) > nr_args:
+                raise TypeError(f"Function {node.name} expects less arguments!")
+            
+            for argument in node.arguments.arguments:
+                param_type = ctx.get_type_function_def_param(node.name, index_arg)
+
+                if param_type != verify(argument.value.expr, ctx):
+                    raise TypeError(f"Incompatible types in function call {node.name}!")
+                index_arg += 1
+                nr_args -= 1
+            
+            if nr_args != 0:
+                raise TypeError(f"Function {node.name} expects more arguments!")
+
+            function_type = ctx.get_type_function_def(node.name)
 
         if ctx.has_function(node.name):
+            nr_args = ctx.get_function_nr_args(node.name)
+            index_arg = 0
+
             for argument in node.arguments.arguments:
                 param_type = ctx.get_type_function_param(node.name, index_arg)
 
@@ -227,34 +239,56 @@ def verify(node, ctx: Context):
             if nr_args != 0:
                 raise TypeError(f"Function {node.name} expects more arguments!")
         
-        function_type = ctx.get_type_function_def(node.name)
+            function_type = ctx.get_type_function(node.name)
 
         return function_type
+    
     elif isinstance(node, ProcedureCall):
-        if not ctx.has_function_def(node.name):
-            raise TypeError(f"Procedure {node.name} not defined!")
-        
-        if ctx.get_type_function_def(node.name) != 'void':
-            raise TypeError(f"Procedure {node.name} must be of type void!")
+        if not ctx.has_function_def(node.name) and not ctx.has_function(node.name):
+            raise TypeError(f"Procedure {node.name} not defined nor declared!")
 
-        nr_args = ctx.get_function_def_nr_args(node.name)
-        index_param = 0
+        if ctx.has_function_def(node.name):
 
-        if node.arguments.arguments and nr_args == 0:
-            raise TypeError(f"Function {node.name} does not expect arguments!")
-        
-        if len(node.arguments.arguments) > nr_args:
-            raise TypeError(f"Procedure {node.name} expects less arguments!")
+            if ctx.get_type_function_def(node.name) != 'void':
+                raise TypeError(f"Procedure {node.name} must be of type void!")
+
+            nr_args = ctx.get_function_def_nr_args(node.name)
+            index_param = 0
+
+            if node.arguments.arguments and nr_args == 0:
+                raise TypeError(f"Procedure {node.name} does not expect arguments!")
+            
+            if len(node.arguments.arguments) > nr_args:
+                raise TypeError(f"Procedure {node.name} expects less arguments!")
+            
+            for argument in node.arguments.arguments:
+                if ctx.get_type_function_def_param(node.name, index_param) != verify(argument.value.expr, ctx):
+                    raise TypeError(f"Incompatible types in procedure call {node.name}!")
+                index_param += 1
+                nr_args -= 1
+
+            if nr_args != 0:
+                raise TypeError(f"Procedure {node.name} expects more arguments!")
         
         if ctx.has_function(node.name):
+            nr_args = ctx.get_function_nr_args(node.name)
+            index_param = 0
+
+            if node.arguments.arguments and nr_args == 0:
+                raise TypeError(f"Function {node.name} does not expect arguments!")
+            
+            if len(node.arguments.arguments) > nr_args:
+                raise TypeError(f"Function {node.name} expects less arguments!")
+
             for argument in node.arguments.arguments:
                 if ctx.get_type_function_param(node.name, index_param) != verify(argument.value.expr, ctx):
                     raise TypeError(f"Incompatible types in function call {node.name}!")
                 index_param += 1
                 nr_args -= 1
-
+            
             if nr_args != 0:
                 raise TypeError(f"Function {node.name} expects more arguments!")
+            
     elif isinstance(node, ArrayAccess):
         if isinstance(node.identifier, VariableAccess):
             if not ctx.has_var(node.identifier.name):
