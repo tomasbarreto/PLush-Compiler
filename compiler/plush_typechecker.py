@@ -228,6 +228,12 @@ def verify(node, ctx: Context):
             nr_args = ctx.get_function_nr_args(node.name)
             index_arg = 0
 
+            if node.arguments.arguments and nr_args == 0:
+                raise TypeError(f"Function {node.name} does not expect arguments!")
+
+            if len(node.arguments.arguments) > nr_args:
+                raise TypeError(f"Function {node.name} expects less arguments!")
+
             for argument in node.arguments.arguments:
                 param_type = ctx.get_type_function_param(node.name, index_arg)
 
