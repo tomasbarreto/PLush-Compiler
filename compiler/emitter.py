@@ -7,6 +7,7 @@ class Emitter(object):
         self.if_end_count = 0
         self.while_count = 0
         self.while_end_count = 0
+        self.add_count = 0
         self.lines = []
         self.context = Context()
 
@@ -29,6 +30,10 @@ class Emitter(object):
     def get_while_end_count(self):
         self.while_end_count += 1
         return self.while_end_count
+    
+    def get_add_count(self):
+        self.add_count += 1
+        return self.add_count
 
     def get_id(self):
         id = self.get_count()
@@ -49,6 +54,10 @@ class Emitter(object):
     def get_while_end_id(self):
         id = self.get_while_end_count()
         return f"while_end_{id}"
+    
+    def get_add_id(self):
+        id = self.get_add_count()
+        return f"add_{id}"
 
     def __lshift__(self, v):
         self.lines.append(v)
