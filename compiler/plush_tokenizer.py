@@ -10,7 +10,7 @@ TOKEN_TYPES = [
     ('RETURN', r'return'),
     ('TYPE', r'char|float|int|boolean|string|void'),
     ('BOOLEAN', r'true|false'),
-    ('FLOAT', r'\d?\.\d+'),
+    ('FLOAT', r'\d+\.\d+|\.\d+'),
     ('INT', r'\d{1,3}(\_\d{3})+|\d+'),
     ('IDENTIFIER', r'[a-zA-Z_][a-zA-Z0-9_]*'),
     ('CHAR', r'\'.\''),
