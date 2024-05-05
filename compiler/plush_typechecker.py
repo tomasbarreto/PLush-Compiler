@@ -214,7 +214,7 @@ def verify(node, ctx: Context):
             for argument in node.arguments.arguments:
                 param_type = ctx.get_type_function_def_param(node.name, index_arg)
 
-                if param_type != verify(argument.value.expr, ctx):
+                if param_type != verify(argument.value, ctx):
                     raise TypeError(f"Incompatible types in function call {node.name}!")
                 index_arg += 1
                 nr_args -= 1
@@ -237,7 +237,7 @@ def verify(node, ctx: Context):
             for argument in node.arguments.arguments:
                 param_type = ctx.get_type_function_param(node.name, index_arg)
 
-                if param_type != verify(argument.value.expr, ctx):
+                if param_type != verify(argument.value, ctx):
                     raise TypeError(f"Incompatible types in function call {node.name}!")
                 index_arg += 1
                 nr_args -= 1
@@ -268,7 +268,7 @@ def verify(node, ctx: Context):
                 raise TypeError(f"Procedure {node.name} expects less arguments!")
             
             for argument in node.arguments.arguments:
-                if ctx.get_type_function_def_param(node.name, index_param) != verify(argument.value.expr, ctx):
+                if ctx.get_type_function_def_param(node.name, index_param) != verify(argument.value, ctx):
                     raise TypeError(f"Incompatible types in procedure call {node.name}!")
                 index_param += 1
                 nr_args -= 1
