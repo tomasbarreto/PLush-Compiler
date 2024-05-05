@@ -25,6 +25,15 @@ def hasDefinition(name, instructions):
                 return True
     return False
 
+def get_function_parameters(parameters):
+    function_parameters = []
+
+    for parameter in parameters:
+        expr_type = get_expr_type(parameter.value, Emitter())
+        function_parameters.append(f"{expr_type} %{parameter.name}")
+
+    return ", ".join(function_parameters)
+
 def compile(node, emitter=Emitter()):
     if isinstance(node, Program):
         compile(node.statements, emitter)
@@ -49,7 +58,17 @@ def compile(node, emitter=Emitter()):
         emitter.push_to_context(node.name, pointer_name)
         emitter << f"   store {expr_type} {expression}, ptr %{pointer_name}"
 
+        return
+
     elif isinstance(node, Expression):
+        if isinstance(node.expr, VariableAccess):
+            new_pointer = emitter.get_prt_id()
+            expression_type = get_expr_type(node, emitter)
+            pointer = emitter.get_from_context(node.expr.name)
+            emitter << f"   %{new_pointer} = load {expression_type}, ptr %{pointer}"
+
+            return new_pointer
+
         return compile(node.expr, emitter)
     elif isinstance(node, (
         Add
@@ -90,5 +109,33 @@ def compile(node, emitter=Emitter()):
         return node.value
     elif isinstance(node, FunctionDefinition):
         emitter << f"\ndeclare {node.type} @{node.name}(ptr, ...) #{emitter.get_function_id()}"
+    elif isinstance(node, ProcedureCall):
+        argument_list = []
+        call_name = emitter.get_call_id()
+
+        for argument in node.arguments.arguments:
+            expr_type = get_expr_type(argument.value, emitter)
+            argument_list.append(f"{expr_type} %{compile(argument, emitter)}")
+
+        emitter << f"   %{call_name} = call void @{node.name}({', '.join(argument_list)})"
+    
+        return
+    elif isinstance(node, Argument):
+        return compile(node.value, emitter)
+    elif isinstance(node, FunctionDeclaration):
+        function_parameters = ""
+        if node.parameters:
+            function_parameters = get_function_parameters(node.parameters.parameters)
+
+        emitter << f"\ndefine dso_local {node.type} @{node.name}({function_parameters}) {{"
+        emitter << f"   entry:"
+
+        compile(node.instructions, emitter)
+
+        if node.type == "void":
+            emitter << f"   ret void"
+        else:
+            emitter << f"   ret {node.type}"
+        emitter << f"}}"    
 
     return emitter.lines

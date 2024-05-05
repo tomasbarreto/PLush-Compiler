@@ -10,6 +10,7 @@ class Emitter(object):
         self.while_end_count = 0
         self.add_count = 0
         self.function_count = 0
+        self.call_count = 0
         self.lines = []
         self.context = Context()
 
@@ -41,10 +42,14 @@ class Emitter(object):
         self.add_count += 1
         return self.add_count
     
-    def get_function_counter(self):
+    def get_function_count(self):
         self.function_count += 1
         return self.function_count
-
+    
+    def get_call_count(self):
+        self.call_count += 1
+        return self.call_count
+    
     def get_id(self):
         id = self.get_count()
         return f"cas_{id}"
@@ -74,9 +79,13 @@ class Emitter(object):
         return f"add_{id}"
 
     def get_function_id(self):
-        id = self.get_function_counter()
+        id = self.get_function_count()
         return id
     
+    def get_call_id(self):
+        id = self.get_call_count()
+        return f"call_{id}"
+
     def __lshift__(self, v):
         self.lines.append(v)
 
