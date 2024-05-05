@@ -9,6 +9,7 @@ class Emitter(object):
         self.while_count = 0
         self.while_end_count = 0
         self.add_count = 0
+        self.mult_count = 0
         self.function_count = 0
         self.call_count = 0
         self.lines = []
@@ -41,6 +42,10 @@ class Emitter(object):
     def get_add_count(self):
         self.add_count += 1
         return self.add_count
+    
+    def get_mult_count(self):
+        self.mult_count += 1
+        return self.mult_count
     
     def get_function_count(self):
         self.function_count += 1
@@ -77,6 +82,10 @@ class Emitter(object):
     def get_add_id(self):
         id = self.get_add_count()
         return f"add_{id}"
+    
+    def get_mult_id(self):
+        id = self.get_mult_count()
+        return f"mult_{id}"
 
     def get_function_id(self):
         id = self.get_function_count()

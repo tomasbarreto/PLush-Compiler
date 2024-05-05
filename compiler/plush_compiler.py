@@ -24,6 +24,13 @@ def str_to_type(type_str):
         return "prt"
     elif type_str == "char":
         return "i8"
+    
+def is_float(string):
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
 
 def are_both_actual_types(left, right):
     if isinstance(left.expr, Int) and isinstance(right.expr, Int) or isinstance(left.expr, Float) and isinstance(right.expr, Float):
@@ -69,7 +76,7 @@ def compile(node, emitter=Emitter()):
         emitter << f"   %{pointer_name} = alloca {expr_type}"
         emitter.push_to_context(node.name, pointer_name)
 
-        if isinstance(expression, (int, float)):
+        if node.value.type == "int" or node.value.type == "float":
             emitter << f"   store {expr_type} {expression}, ptr %{pointer_name}"
         else:
             emitter << f"   store {expr_type} %{expression}, ptr %{pointer_name}"
@@ -125,6 +132,46 @@ def compile(node, emitter=Emitter()):
                     emitter << f"   %{add_id} = fadd float %{left}, %{right}"
 
         return add_id
+    
+    elif isinstance(node, (
+        Mult
+    )):
+        # check if the left and right are actual types
+        are_actual_types = are_both_actual_types(node.left, node.right)
+
+        if are_actual_types:
+            if isinstance(node.left.expr, Int):
+                return int(node.left.expr.value) * int(node.right.expr.value)
+            else:
+                return float(node.left.expr.value) * float(node.right.expr.value)
+            
+        else:
+
+            left = compile(node.left, emitter)
+            right = compile(node.right, emitter)
+
+            mult_id = emitter.get_mult_id()
+            
+            if node.left.type == "int":
+                if left.isnumeric() and right.isnumeric():
+                    emitter << f"   %{mult_id} = mul nsw i32 {left}, {right}"
+                elif left.isnumeric():
+                    emitter << f"   %{mult_id} = mul nsw i32 {left}, %{right}"
+                elif right.isnumeric():
+                    emitter << f"   %{mult_id} = mul nsw i32 %{left}, {right}"
+                else:
+                    emitter << f"   %{mult_id} = mul nsw i32 %{left}, %{right}"
+            elif node.left.type == "float":
+                if is_float(left) and is_float(right):
+                    emitter << f"   %{mult_id} = fmul float {left}, {right}"
+                elif is_float(left):
+                    emitter << f"   %{mult_id} = fmul float {left}, %{right}"
+                elif is_float(right):
+                    emitter << f"   %{mult_id} = fmul float %{left}, {right}"
+                else:
+                    emitter << f"   %{mult_id} = fmul float %{left}, %{right}"
+
+        return mult_id
 
     elif isinstance(node, (
         Int,
