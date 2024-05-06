@@ -114,9 +114,13 @@ def verify(node, ctx: Context):
         if expr_type != "boolean":
             raise TypeError(f"If conditions must have type booean! Not type {expr_type}!")
 
+        ctx.enter_scope()
         verify(node.then_block, ctx)
+        ctx.exit_scope()
         if node.else_block.instructions:
+            ctx.enter_scope()
             verify(node.else_block, ctx)
+            ctx.exit_scope()
     elif isinstance(node, ThenBlock):
         for instruction in node.instructions:
             verify(instruction, ctx)
