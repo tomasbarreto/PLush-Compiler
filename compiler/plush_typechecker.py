@@ -183,6 +183,11 @@ def verify(node, ctx: Context):
         for instruction in node.instructions.instructions:
             verify(instruction, ctx)
 
+        last_instruction = node.instructions.instructions[-1]
+
+        if not isinstance(last_instruction, VariableAssignment) or last_instruction.name != node.name:
+            raise TypeError(f"Function {node.name} must return a value!")
+
         ctx.exit_scope()
 
     elif isinstance(node, FunctionDefinition):
