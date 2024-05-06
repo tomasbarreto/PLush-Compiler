@@ -109,19 +109,28 @@ def compile(node, emitter=Emitter()):
                 cmp_type = "f"
                 operator_type = "o"
 
+            percentage_symbol_right = "%"
+
+            if isinstance(right, int) or is_float(right):
+                percentage_symbol_right = ""
+
+            percentage_symbol_left = "%"
+
+            if isinstance(left, int) or is_float(left):
+                percentage_symbol_left = ""
 
             if node.expr.operator == "<":
-                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}lt {expression_type} {left}, {right}"
+                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}lt {expression_type} {percentage_symbol_left}{left}, {percentage_symbol_right}{right}"
             elif node.expr.operator == ">":
-                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}gt {expression_type} {left}, {right}"
+                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}gt {expression_type} {percentage_symbol_left}{left}, {percentage_symbol_right}{right}"
             elif node.expr.operator == "<=":
-                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}le {expression_type} {left}, {right}"
+                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}le {expression_type} {percentage_symbol_left}{left}, {percentage_symbol_right}{right}"
             elif node.expr.operator == ">=":
-                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}ge {expression_type} {left}, {right}"
+                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}ge {expression_type} {percentage_symbol_left}{left}, {percentage_symbol_right}{right}"
             elif node.expr.operator == "=":
-                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}eq {expression_type} {left}, {right}"
+                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}eq {expression_type} {percentage_symbol_left}{left}, {percentage_symbol_right}{right}"
             elif node.expr.operator == "!=":
-                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}ne {expression_type} {left}, {right}"
+                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}ne {expression_type} {percentage_symbol_left}{left}, {percentage_symbol_right}{right}"
 
             return new_pointer
 
@@ -247,9 +256,6 @@ def compile(node, emitter=Emitter()):
     elif isinstance(node, Argument):
         return compile(node.value, emitter)
     elif isinstance(node, FunctionDeclaration):
-
-        # NEED TO FIX THE FUNCTION PARAMETERS INITIALIZATION
-
         emitter.context.enter_scope()
 
         function_parameters = ""
@@ -279,14 +285,14 @@ def compile(node, emitter=Emitter()):
         if_id = emitter.get_if_id()
         condition = compile(node.condition, emitter)
 
-        emitter << f"   br i1 {condition}, label %if.then{if_id}, label %if.else{if_id}"
-        emitter << f"if.then{if_id}:"
+        emitter << f"   br i1 %{condition}, label %if.then{if_id}, label %if.else{if_id}"
+        emitter << f"{if_id}.then:"
         compile(node.then_block, emitter)
-        emitter << f"   br label %if.end{if_id}"
-        emitter << f"if.else{if_id}:"
+        emitter << f"   br label %{if_id}.end"
+        emitter << f"{if_id}.else:"
         compile(node.else_block, emitter)
-        emitter << f"   br label %if.end{if_id}"
-        emitter << f"if_end_{if_id}:"
+        emitter << f"   br label %{if_id}.end"
+        emitter << f"{if_id}.end:"
 
         return
     elif isinstance(node, (ThenBlock, ElseBlock)):
