@@ -209,4 +209,16 @@ def compile(node, emitter=Emitter()):
             emitter << f"   ret {node.type}"
         emitter << f"}}"    
 
+    elif isinstance(node, WhileStatement):
+        while_id = emitter.get_while_id()
+        emitter << f"   br label %{while_id}.cond\n\n"
+        emitter << f"{while_id}.cond:"
+        compile(node.condition, emitter)
+        emitter << f"\n\n{while_id}.body:"
+        compile(node.code_block, emitter)
+        emitter << f"br label %{while_id}.cond\n\n"
+        emitter << f"{while_id}.end:"
+
+        return
+
     return emitter.lines
