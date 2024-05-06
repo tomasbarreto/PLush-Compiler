@@ -9,9 +9,11 @@ class Emitter(object):
         self.while_count = 0
         self.while_end_count = 0
         self.add_count = 0
+        self.sub_count = 0
         self.mult_count = 0
         self.function_count = 0
         self.call_count = 0
+        self.cmp_count = 0
         self.lines = []
         self.context = Context()
 
@@ -43,6 +45,10 @@ class Emitter(object):
         self.add_count += 1
         return self.add_count
     
+    def get_sub_count(self):
+        self.sub_count += 1
+        return self.sub_count
+    
     def get_mult_count(self):
         self.mult_count += 1
         return self.mult_count
@@ -55,6 +61,10 @@ class Emitter(object):
         self.call_count += 1
         return self.call_count
     
+    def get_cmp_count(self):
+        self.cmp_count += 1
+        return self.cmp_count
+
     def get_id(self):
         id = self.get_count()
         return f"cas_{id}"
@@ -83,6 +93,10 @@ class Emitter(object):
         id = self.get_add_count()
         return f"add_{id}"
     
+    def get_sub_id(self):
+        id = self.get_sub_count()
+        return f"sub_{id}"
+    
     def get_mult_id(self):
         id = self.get_mult_count()
         return f"mult_{id}"
@@ -94,6 +108,10 @@ class Emitter(object):
     def get_call_id(self):
         id = self.get_call_count()
         return f"call_{id}"
+    
+    def get_cmp_id(self):
+        id = self.get_cmp_count()
+        return f"cmp_{id}"
 
     def __lshift__(self, v):
         self.lines.append(v)

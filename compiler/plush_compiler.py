@@ -4,7 +4,7 @@ from emitter import Emitter
 def get_expr_type(expr, emitter):
     if expr.type == "int":
         return "i32"
-    elif expr.type == "bool":
+    elif expr.type == "boolean":
         return "i1"
     elif expr.type == "float":
         return "float"
@@ -16,7 +16,7 @@ def get_expr_type(expr, emitter):
 def str_to_type(type_str):
     if type_str == "int":
         return "i32"
-    elif type_str == "bool":
+    elif type_str == "boolean":
         return "i1"
     elif type_str == "float":
         return "float"
@@ -44,12 +44,14 @@ def hasDefinition(name, instructions):
                 return True
     return False
 
-def get_function_parameters(parameters):
+def get_function_parameters(parameters, emitter):
     function_parameters = []
 
     for parameter in parameters:
         expr_type = str_to_type(parameter.type)
-        function_parameters.append(f"{expr_type} %{parameter.name}")
+        new_pointer = emitter.get_prt_id()
+        emitter.context.set_type(parameter.name, new_pointer)
+        function_parameters.append(f"{expr_type} %{new_pointer}")
 
     return ", ".join(function_parameters)
 
@@ -76,7 +78,7 @@ def compile(node, emitter=Emitter()):
         emitter << f"   %{pointer_name} = alloca {expr_type}"
         emitter.push_to_context(node.name, pointer_name)
 
-        if node.value.type == "int" or node.value.type == "float":
+        if expression.isnumeric() or is_float(expression):
             emitter << f"   store {expr_type} {expression}, ptr %{pointer_name}"
         else:
             emitter << f"   store {expr_type} %{expression}, ptr %{pointer_name}"
@@ -91,47 +93,98 @@ def compile(node, emitter=Emitter()):
             emitter << f"   %{new_pointer} = load {expression_type}, ptr %{pointer}"
 
             return new_pointer
+        elif isinstance(node.expr, Compare):
+            new_pointer = emitter.get_cmp_id()
+            expression_type = get_expr_type(node, emitter)
+            left = compile(node.expr.left, emitter)
+            right = compile(node.expr.right, emitter)
+
+            cmp_type = "i"
+            operator_type = ""
+
+            if node.expr.operator != "eq" or node.expr.operator != "ne":
+                operator_type = "s"
+
+            if expression_type == "float":
+                cmp_type = "f"
+                operator_type = "o"
+
+
+            if node.expr.operator == "<":
+                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}lt {expression_type} {left}, {right}"
+            elif node.expr.operator == ">":
+                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}gt {expression_type} {left}, {right}"
+            elif node.expr.operator == "<=":
+                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}le {expression_type} {left}, {right}"
+            elif node.expr.operator == ">=":
+                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}ge {expression_type} {left}, {right}"
+            elif node.expr.operator == "=":
+                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}eq {expression_type} {left}, {right}"
+            elif node.expr.operator == "!=":
+                emitter << f"   %{new_pointer} = {cmp_type}cmp {operator_type}ne {expression_type} {left}, {right}"
+
+            return new_pointer
 
         return compile(node.expr, emitter)
     elif isinstance(node, (
-        Add
+        Add,
+        Sub
     )):
         # check if the left and right are actual types
         are_actual_types = are_both_actual_types(node.left, node.right)
 
         if are_actual_types:
-            if isinstance(node.left.expr, Int):
-                return int(node.left.expr.value) + int(node.right.expr.value)
-            else:
-                return float(node.left.expr.value) + float(node.right.expr.value)
-            
+            if isinstance(node, Add):
+                if isinstance(node.left.expr, Int):
+                    return int(node.left.expr.value) + int(node.right.expr.value)
+                else:
+                    return float(node.left.expr.value) + float(node.right.expr.value)
+            else :
+                if isinstance(node.left.expr, Int):
+                    return int(node.left.expr.value) - int(node.right.expr.value)
+                else:
+                    return float(node.left.expr.value) - float(node.right.expr.value)
         else:
 
             left = compile(node.left, emitter)
             right = compile(node.right, emitter)
 
-            add_id = emitter.get_add_id()
+            if node.left.type == "int":
+                id = emitter.get_add_id()
+            else:
+                id = emitter.get_sub_id()
+
+            if isinstance(node, Add):
+                if node.left.type == "int":
+                    operation = "add"
+                else:
+                    operation = "fadd"
+            else:
+                if node.left.type == "int":
+                    operation = "sub"
+                else:
+                    operation = "fsub"
             
             if node.left.type == "int":
                 if left.isnumeric() and right.isnumeric():
-                    emitter << f"   %{add_id} = add nsw i32 {left}, {right}"
+                    emitter << f"   %{id} = {operation} nsw i32 {left}, {right}"
                 elif left.isnumeric():
-                    emitter << f"   %{add_id} = add nsw i32 {left}, %{right}"
+                    emitter << f"   %{id} = {operation} nsw i32 {left}, %{right}"
                 elif right.isnumeric():
-                    emitter << f"   %{add_id} = add nsw i32 %{left}, {right}"
+                    emitter << f"   %{id} = {operation} nsw i32 %{left}, {right}"
                 else:
-                    emitter << f"   %{add_id} = add nsw i32 %{left}, %{right}"
+                    emitter << f"   %{id} = {operation} nsw i32 %{left}, %{right}"
             elif node.left.type == "float":
                 if left.isnumeric() and right.isnumeric():
-                    emitter << f"   %{add_id} = fadd float {left}, {right}"
+                    emitter << f"   %{id} = {operation} float {left}, {right}"
                 elif left.isnumeric():
-                    emitter << f"   %{add_id} = fadd float {left}, %{right}"
+                    emitter << f"   %{id} = {operation} float {left}, %{right}"
                 elif right.isnumeric():
-                    emitter << f"   %{add_id} = fadd float %{left}, {right}"
+                    emitter << f"   %{id} = {operation} float %{left}, {right}"
                 else:
-                    emitter << f"   %{add_id} = fadd float %{left}, %{right}"
+                    emitter << f"   %{id} = {operation} float %{left}, %{right}"
 
-        return add_id
+        return id
     
     elif isinstance(node, (
         Mult
@@ -194,19 +247,52 @@ def compile(node, emitter=Emitter()):
     elif isinstance(node, Argument):
         return compile(node.value, emitter)
     elif isinstance(node, FunctionDeclaration):
+
+        # NEED TO FIX THE FUNCTION PARAMETERS INITIALIZATION
+
+        emitter.context.enter_scope()
+
         function_parameters = ""
         if node.parameters:
-            function_parameters = get_function_parameters(node.parameters.parameters)
+            function_parameters = get_function_parameters(node.parameters.parameters, emitter)
 
-        emitter << f"\ndefine dso_local {node.type} @{node.name}({function_parameters}) {{"
-        emitter << f"   entry:"
+        emitter << f"\ndefine dso_local {str_to_type(node.type)} @{node.name}({function_parameters}) {{"
+        emitter << f"entry:"
+
+        for parameter in node.parameters.parameters:
+            expr_type = str_to_type(parameter.type)
+            pointer = emitter.context.get_type(parameter.name)
+            emitter << f"   %{pointer}.addr = alloca {expr_type}"
+            emitter << f"   store {expr_type} %{pointer}, ptr %{pointer}.addr"
 
         compile(node.instructions, emitter)
 
         if node.type == "void":
             emitter << f"   ret void"
         else:
-            emitter << f"   ret {node.type}"
+            emitter << f"   ret {str_to_type(node.type)} {compile(node.instructions.instructions[-1], emitter)}"
         emitter << f"}}"    
 
+        emitter.context.exit_scope()
+
+    elif isinstance(node, IfStatement):
+        if_id = emitter.get_if_id()
+        condition = compile(node.condition, emitter)
+
+        emitter << f"   br i1 {condition}, label %if.then{if_id}, label %if.else{if_id}"
+        emitter << f"if.then{if_id}:"
+        compile(node.then_block, emitter)
+        emitter << f"   br label %if.end{if_id}"
+        emitter << f"if.else{if_id}:"
+        compile(node.else_block, emitter)
+        emitter << f"   br label %if.end{if_id}"
+        emitter << f"if_end_{if_id}:"
+
+        return
+    elif isinstance(node, (ThenBlock, ElseBlock)):
+        for instruction in node.instructions:
+            compile(instruction, emitter)
+        
+        return
+    
     return emitter.lines
