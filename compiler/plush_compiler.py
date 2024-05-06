@@ -262,6 +262,8 @@ def compile(node, emitter=Emitter()):
         if node.parameters:
             function_parameters = get_function_parameters(node.parameters.parameters, emitter)
 
+        emitter.push_to_context(node.name, node.name)
+
         emitter << f"\ndefine dso_local {str_to_type(node.type)} @{node.name}({function_parameters}) {{"
         emitter << f"entry:"
 
@@ -276,7 +278,7 @@ def compile(node, emitter=Emitter()):
         if node.type == "void":
             emitter << f"   ret void"
         else:
-            emitter << f"   ret {str_to_type(node.type)} {compile(node.instructions.instructions[-1], emitter)}"
+            emitter << f"   ret {str_to_type(node.type)} %{emitter.get_from_context(node.name)}"
         emitter << f"}}"    
 
         emitter.context.exit_scope()
@@ -312,5 +314,9 @@ def compile(node, emitter=Emitter()):
         emitter << f"{while_id}.end:"
 
         return
+    elif isinstance(node, VariableAssignment):
+        pointer = emitter.get_from_context(node.name)
+        expression = compile(node.value, emitter)
+        emitter << f"   store {get_expr_type(node.value, emitter)} {expression}, ptr %{pointer}"
 
     return emitter.lines
