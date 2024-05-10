@@ -14,7 +14,9 @@ class Emitter(object):
         self.function_count = 0
         self.call_count = 0
         self.cmp_count = 0
+        self.add_count = 0
         self.lines = []
+        self.function_declarations = []
         self.context = Context()
 
     def get_count(self):
@@ -64,6 +66,10 @@ class Emitter(object):
     def get_cmp_count(self):
         self.cmp_count += 1
         return self.cmp_count
+    
+    def get_add_count(self):
+        self.add_count += 1
+        return self.add_count
 
     def get_id(self):
         id = self.get_count()
@@ -112,6 +118,10 @@ class Emitter(object):
     def get_cmp_id(self):
         id = self.get_cmp_count()
         return f"cmp_{id}"
+    
+    def get_add_id(self):
+        id = self.get_add_count()
+        return f"add_{id}"
 
     def __lshift__(self, v):
         self.lines.append(v)
@@ -124,3 +134,6 @@ class Emitter(object):
     
     def get_from_context(self, name):
         return self.context.get_type(name)
+    
+    def push_to_function_declarations(self, declaration):
+        self.function_declarations.append(declaration)
