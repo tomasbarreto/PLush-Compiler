@@ -6,12 +6,20 @@ from context import Context
 from emitter import Emitter
 
 source_code = '''
-var x : int := 1;
-var y : int := 1 + 2;
+var x : int := 5;
+var y : int := 10;
 
-var z : int := x + y;
+function add(var x : int, var y : int) : int {
+    var isA : boolean := true;
+    var isB : boolean := false;
+    var isC : boolean := true;
 
-function print_int(var x : int) : void;
+    while isA && isB || isC {
+        x := x + 1;
+    }
+
+    add := 2;
+}
 '''
 tokens = tokenize(source_code)
 for token in tokens:
@@ -26,3 +34,8 @@ llvm_code = compile(typed_ast, Emitter())
 
 for line in llvm_code:
     print(line)
+
+# write to llvm file
+with open('output.ll', 'w') as f:
+    for line in llvm_code:
+        f.write(line + '\n')
