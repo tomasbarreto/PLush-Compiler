@@ -15,9 +15,15 @@ class Emitter(object):
         self.call_count = 0
         self.cmp_count = 0
         self.add_count = 0
+        self.condition_count = 0
         self.lines = []
         self.function_declarations = []
         self.context = Context()
+        self.condition_context = Context()
+        self.current_and_end = ""
+        self.current_while_body = ""
+        self.current_while_end = ""
+        self.condition_context = []
 
     def get_count(self):
         self.count += 1
@@ -70,6 +76,10 @@ class Emitter(object):
     def get_add_count(self):
         self.add_count += 1
         return self.add_count
+    
+    def get_condition_count(self):
+        self.condition_count += 1
+        return self.condition_count
 
     def get_id(self):
         id = self.get_count()
@@ -122,6 +132,10 @@ class Emitter(object):
     def get_add_id(self):
         id = self.get_add_count()
         return f"add_{id}"
+    
+    def get_condition_id(self):
+        id = self.get_condition_count()
+        return f"cond_{id}"
 
     def __lshift__(self, v):
         self.lines.append(v)
@@ -137,3 +151,15 @@ class Emitter(object):
     
     def push_to_function_declarations(self, declaration):
         self.function_declarations.append(declaration)
+
+    def push_to_condition_context(self, name, llvm_name):
+        self.condition_context.set_type(name, llvm_name)
+    
+    def get_from_condition_context(self, name):
+        return self.condition_context.get_type(name)
+    
+    def enter_condition_scope(self):
+        self.condition_context.enter_scope()
+    
+    def exit_condition_scope(self):
+        self.condition_context.exit_scope()
