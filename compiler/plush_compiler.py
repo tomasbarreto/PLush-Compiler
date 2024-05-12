@@ -331,17 +331,22 @@ def compile(node, emitter=Emitter()):
         # Compile the condition
         compile(node.condition, emitter)
 
+        result = ""
+        for i in range(1, len(emitter.condition_context) - 1):
+            result += emitter.condition_context[i] + ", "
+
+        result += emitter.condition_context[len(emitter.condition_context) - 1]
         # build phi operation
         emitter << f"{emitter.current_and_end}:"
         pointer = emitter.get_prt_id()
-        emitter << f"   %{pointer} = phi i1 {', '.join(emitter.condition_context)}"
+        emitter << f"   %{pointer} = phi i1 {result}"
         emitter << f"   br i1 %{pointer}, label %{while_id}.body, label %{while_id}.end"
         
         # Body
         emitter << f"\n\n{while_id}.body:"
         for instruction in node.code_block:
             compile(instruction, emitter)
-        emitter << f"   br label %{while_id}.cond\n\n"
+        emitter << f"   br label %{emitter.current_and_end.split('.')[0]}\n"
 
         # End
         emitter << f"{while_id}.end:"
@@ -415,7 +420,7 @@ def compile(node, emitter=Emitter()):
             emitter.condition_context.append(f"[ true, %{right_condition_pointer} ]")
             variable_pointer = compile(node.left, emitter)
             compare_pointer = emitter.get_cmp_id()
-            emitter << f"   %{compare_pointer} = icmp eq ne %{variable_pointer}, 0"
+            emitter << f"   %{compare_pointer} = icmp ne i1 %{variable_pointer}, 0"
             emitter << f"   br i1 %{compare_pointer}, label %{emitter.current_and_end}, label %cond_{emitter.condition_count + 1}"
 
         if not isinstance(node.right.expr, (And, Or)):
