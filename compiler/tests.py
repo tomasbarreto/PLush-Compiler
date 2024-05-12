@@ -6,19 +6,20 @@ from context import Context
 from emitter import Emitter
 
 source_code = '''
-var x : int := 5;
-var y : int := 10;
+function print_int(var x : int) : void;
 
-function add(var x : int, var y : int) : int {
+function main() : void {
+    var x : int := 5;
+    var y : int := 10;
+
     var isA : boolean := true;
     var isB : boolean := false;
     var isC : boolean := true;
 
     while isA && isB || isC {
         x := x + 1;
+        print_int(x);
     }
-
-    add := 2;
 }
 '''
 tokens = tokenize(source_code)
