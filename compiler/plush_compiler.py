@@ -9,7 +9,7 @@ def get_expr_type(expr, emitter):
     elif expr.type == "float":
         return "float"
     elif expr.type == "string":
-        return "prt"
+        return "ptr"
     elif expr.type == "char":
         return "i8"
     
@@ -57,9 +57,26 @@ def get_function_parameters(parameters, emitter):
 
     return ", ".join(function_parameters)
 
+def declare_global_variables(statements, emitter):
+    result = []
+    for statement in statements.instructions:
+        if isinstance(statement, VariableDeclaration):
+            new_pointer = emitter.get_prt_id()
+            expr_type = get_expr_type(statement.value, emitter)
+            
+            if expr_type == "ptr":
+                string_len = len(statement.value.expr.value) - 1
+                emitter.global_variables.append(f'@{new_pointer} = private unnamed_addr constant [{string_len} x i8] c"{statement.value.expr.value[1:-1]}\\00"')
+                emitter.global_variables_context.set_type(statement.name, new_pointer)
+        else:
+            result.append(statement)
+    
+    return InstructionList(result)
+
 def compile(node, emitter=Emitter()):
     if isinstance(node, Program):
-        compile(node.statements, emitter)
+        instructions = declare_global_variables(node.statements, emitter)
+        compile(instructions, emitter)
     elif isinstance(node, InstructionList):
         for instruction in node.instructions:
             if isinstance(instruction, FunctionDefinition):
@@ -91,8 +108,18 @@ def compile(node, emitter=Emitter()):
         if isinstance(node.expr, VariableAccess):
             new_pointer = emitter.get_prt_id()
             expression_type = get_expr_type(node, emitter)
-            pointer = emitter.get_from_context(node.expr.name)
-            emitter << f"   %{new_pointer} = load {expression_type}, ptr %{pointer}"
+
+            if emitter.global_variables_context.has_var(node.expr.name) and not emitter.context.has_var(node.expr.name):
+                pointer = emitter.global_variables_context.get_type(node.expr.name)
+                symbol = "@"
+            elif emitter.global_variables_context.has_var(node.expr.name) and emitter.context.has_var(node.expr.name):
+                pointer = emitter.get_from_context(node.expr.name)
+                symbol = "%"
+            else:
+                pointer = emitter.get_from_context(node.expr.name)
+                symbol = "%"
+
+            emitter << f"   %{new_pointer} = load {expression_type}, ptr {symbol}{pointer}"
 
             return new_pointer
         elif isinstance(node.expr, (Compare, Equality)):
@@ -295,14 +322,28 @@ def compile(node, emitter=Emitter()):
 
     elif isinstance(node, IfStatement):
         if_id = emitter.get_if_id()
-        condition = compile(node.condition, emitter)
+        emitter.current_cond_end = f"{if_id}.end"
+        
+        if node.else_block.instructions:
+            emitter.current_cond_end = f"{if_id}.else"
 
-        percentage_symbol = "%"
+        if not isinstance(node.condition.expr, (And, Or)):
+            condition = compile(node.condition, emitter)
 
-        if isinstance(condition, int):
-            percentage_symbol = ""
+            percentage_symbol = "%"
 
-        emitter << f"   br i1 {percentage_symbol}{condition}, label %{if_id}.then, label %{if_id}.else"
+            if isinstance(condition, int):
+                percentage_symbol = ""
+
+            emitter << f"   br i1 {percentage_symbol}{condition}, label %{if_id}.then, label %{if_id}.else"
+        else:
+            emitter << f"   br label %{emitter.get_condition_id()}"
+            condition = compile(node.condition, emitter)
+            if not node.else_block.instructions:    
+                emitter << f"cond_{emitter.condition_count}:"
+                emitter << f"   br label %{if_id}.then"
+
+        
         emitter << f"{if_id}.then:"
         compile(node.then_block, emitter)
         emitter << f"   br label %{if_id}.end"
@@ -313,40 +354,42 @@ def compile(node, emitter=Emitter()):
 
         return
     elif isinstance(node, (ThenBlock, ElseBlock)):
-        for instruction in node.instructions:
-            compile(instruction, emitter)
-        
+        if node.instructions:
+            for instruction in node.instructions:
+                compile(instruction, emitter)
+            
         return
     
     elif isinstance(node, WhileStatement):
         while_id = emitter.get_while_id()
-        emitter.current_while_body = f"{while_id}.body"
-        emitter.current_while_end = f"{while_id}.end"
-        emitter.current_and_end = ""
-
         condition_pointer = emitter.get_condition_id()
-        emitter.condition_count -= 1
+        
         emitter << f"   br label %{condition_pointer}\n"
 
+        emitter.current_cond_end = f"{right_condition_pointer}.end"
+
+        if not isinstance(node.condition.expr, (And, Or)):
+            emitter << f"{condition_pointer}:"
+
         # Compile the condition
-        compile(node.condition, emitter)
+        pointer = compile(node.condition, emitter)
 
-        result = ""
-        for i in range(1, len(emitter.condition_context) - 1):
-            result += emitter.condition_context[i] + ", "
+        if isinstance(node.condition.expr, (And, Or)):
+            # build phi operation
+            emitter << f"{emitter.current_cond_end}:"
+            pointer = emitter.get_prt_id()
+            emitter << f"   %{pointer} = phi i1 {', '.join(emitter.condition_context)}"
+            emitter << f"   br i1 %{pointer}, label %{while_id}.body, label %{while_id}.end"
 
-        result += emitter.condition_context[len(emitter.condition_context) - 1]
-        # build phi operation
-        emitter << f"{emitter.current_and_end}:"
-        pointer = emitter.get_prt_id()
-        emitter << f"   %{pointer} = phi i1 {result}"
-        emitter << f"   br i1 %{pointer}, label %{while_id}.body, label %{while_id}.end"
+            emitter.reset_condition_context()
+        else:
+            emitter << f"   br i1 %{pointer}, label %{while_id}.body, label %{while_id}.end"
         
         # Body
         emitter << f"\n\n{while_id}.body:"
         for instruction in node.code_block:
             compile(instruction, emitter)
-        emitter << f"   br label %{emitter.current_and_end.split('.')[0]}\n"
+        emitter << f"   br label %{condition_pointer}\n"
 
         # End
         emitter << f"{while_id}.end:"
@@ -360,86 +403,87 @@ def compile(node, emitter=Emitter()):
         else:
             emitter << f"   store {get_expr_type(node.value, emitter)} %{expression}, ptr %{pointer}"
     elif isinstance(node, And):
-        right_condition_pointer = emitter.get_condition_id()
-
-        if len(emitter.current_and_end) == 0:
-            emitter.current_and_end = f"{right_condition_pointer}.end"
-
-        emitter << f"{right_condition_pointer}:"
+        right_condition_pointer = f"cond_{emitter.condition_count}"
 
         if isinstance(node.left.expr, Boolean):
-            # add the right condition to the context for the PHI operation
-            emitter.condition_context.append(f"[ {node.left.expr.value}, %{right_condition_pointer} ]")
-            if not isinstance(node.right.expr, Or):
-                emitter << f"   br i1 %{compare_pointer}, label %cond_{emitter.condition_count + 1}, label %{emitter.current_and_end}"
-            else:
-                emitter << f"   br i1 %{compare_pointer}, label %cond_{emitter.condition_count + 1}, label %cond_{emitter.condition_count + 2}"
+            if node.left.expr.value == "false":
+                emitter << f"{right_condition_pointer}:"
+                # add the right condition to the context for the PHI operation
+                emitter.condition_context.append(f"[ {node.left.expr.value}, %{right_condition_pointer} ]")
+                if not isinstance(node.right.expr, Or):
+                    emitter << f"   br i1 %{compare_pointer}, label %{emitter.get_condition_id()}, label %{emitter.current_cond_end}"
+                else:
+                    emitter << f"   br i1 %{compare_pointer}, label %{emitter.get_condition_id()}, label %{emitter.get_condition_id()}"
         elif isinstance(node.left.expr, VariableAccess):
+            emitter << f"{right_condition_pointer}:"
             # add the right condition to the context for the PHI operation
             emitter.condition_context.append(f"[ false, %{right_condition_pointer} ]")
             variable_pointer = compile(node.left, emitter)
             compare_pointer = emitter.get_cmp_id()
             emitter << f"   %{compare_pointer} = icmp ne i1 %{variable_pointer}, 0"
             if not isinstance(node.right.expr, Or):
-                emitter << f"   br i1 %{compare_pointer}, label %cond_{emitter.condition_count + 1}, label %{emitter.current_and_end}"
+                emitter << f"   br i1 %{compare_pointer}, label %{emitter.get_condition_id()}, label %{emitter.current_cond_end}"
             else:
-                emitter << f"   br i1 %{compare_pointer}, label %cond_{emitter.condition_count + 1}, label %cond_{emitter.condition_count + 2}"
+                emitter << f"   br i1 %{compare_pointer}, label %{emitter.get_condition_id()}, label %{emitter.get_condition_id()}"
         if not isinstance(node.right.expr, (And, Or)):
-            right_condition_pointer = emitter.get_condition_id()
-
-            emitter << f"{right_condition_pointer}:"
+            right_condition_pointer = f"cond_{emitter.condition_count}"
 
             if isinstance(node.right.expr, Boolean):
-                # add the right condition to the context for the PHI operation
-                emitter.condition_context.append(f"[ {node.right.expr.value}, %{right_condition_pointer} ]")
-                emitter << f"   br label %{emitter.current_and_end}"
+                if node.right.expr.value == "false":
+                    emitter << f"{right_condition_pointer}:"
+                    # add the right condition to the context for the PHI operation
+                    emitter.condition_context.append(f"[ {node.right.expr.value}, %{right_condition_pointer} ]")
+                    emitter << f"   br label %{emitter.current_cond_end}"
             elif isinstance(node.right.expr, VariableAccess):
+                emitter << f"{right_condition_pointer}:"
                 # add the right condition to the context for the PHI operation
                 compare_pointer = emitter.get_cmp_id()
                 emitter.condition_context.append(f"[ %{compare_pointer}, %{right_condition_pointer} ]")
                 variable_pointer = compile(node.right, emitter)
                 emitter << f"   %{compare_pointer} = icmp ne i1 %{variable_pointer}, 0"
-                emitter << f"   br label %{emitter.current_and_end}"
+                emitter << f"   br label %{emitter.current_cond_end}"
         else:
             compile(node.right, emitter)
 
     elif isinstance(node, Or):
-        right_condition_pointer = emitter.get_condition_id()
+        right_condition_pointer = f"cond_{emitter.condition_count}"
 
-        if len(emitter.current_and_end) == 0:
-            emitter.current_and_end = f"{right_condition_pointer}.end"
-
-        emitter << f"{right_condition_pointer}:"
+        if len(emitter.current_cond_end) == 0:
+            emitter.current_cond_end = f"{right_condition_pointer}.end"
 
         if isinstance(node.left.expr, Boolean):
-            # add the right condition to the context for the PHI operation
-            emitter.condition_context.append(f"[ {node.left.expr.value}, %{right_condition_pointer} ]")
-            emitter << f"   br i1 {node.left.expr.value}, label %{emitter.current_and_end}, label %cond_{emitter.condition_count + 1}"
+            if node.left.expr.value == "true":
+                emitter << f"{right_condition_pointer}:"
+                # add the right condition to the context for the PHI operation
+                emitter.condition_context.append(f"[ {node.left.expr.value}, %{right_condition_pointer} ]")
+                emitter << f"   br i1 {node.left.expr.value}, label %{emitter.current_cond_end}, label %{emitter.get_condition_id()}"
         elif isinstance(node.left.expr, VariableAccess):
+            emitter << f"{right_condition_pointer}:"
             # add the right condition to the context for the PHI operation
             emitter.condition_context.append(f"[ true, %{right_condition_pointer} ]")
             variable_pointer = compile(node.left, emitter)
             compare_pointer = emitter.get_cmp_id()
             emitter << f"   %{compare_pointer} = icmp ne i1 %{variable_pointer}, 0"
-            emitter << f"   br i1 %{compare_pointer}, label %{emitter.current_and_end}, label %cond_{emitter.condition_count + 1}"
+            emitter << f"   br i1 %{compare_pointer}, label %{emitter.current_cond_end}, label %{emitter.get_condition_id()}"
 
         if not isinstance(node.right.expr, (And, Or)):
-            right_condition_pointer = emitter.get_condition_id()
-
-            emitter << f"{right_condition_pointer}:"
+            right_condition_pointer = f"cond_{emitter.condition_count}"
 
             if isinstance(node.right.expr, Boolean):
-                # add the right condition to the context for the PHI operation
-                emitter.condition_context.append(f"[ {node.right.expr.value}, %{right_condition_pointer} ]")
-                emitter << f"   br label %{emitter.current_and_end}"
+                if node.right.expr.value == "true":
+                    emitter << f"{right_condition_pointer}:"
+                    # add the right condition to the context for the PHI operation
+                    emitter.condition_context.append(f"[ {node.right.expr.value}, %{right_condition_pointer} ]")
+                    emitter << f"   br label %{emitter.current_cond_end}"
             elif isinstance(node.right.expr, VariableAccess):
+                emitter << f"{right_condition_pointer}:"
                 # add the right condition to the context for the PHI operation
                 compare_pointer = emitter.get_cmp_id()
                 emitter.condition_context.append(f"[ %{compare_pointer}, %{right_condition_pointer} ]")
                 variable_pointer = compile(node.right, emitter)
                 emitter << f"   %{compare_pointer} = icmp ne i1 %{variable_pointer}, 0"
-                emitter << f"   br label %{emitter.current_and_end}"
+                emitter << f"   br label %{emitter.current_cond_end}"
         else:
             compile(node.right, emitter)
 
-    return emitter.lines + emitter.function_declarations
+    return emitter.global_variables + emitter.lines + emitter.function_declarations

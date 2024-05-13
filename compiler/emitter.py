@@ -16,14 +16,14 @@ class Emitter(object):
         self.cmp_count = 0
         self.add_count = 0
         self.condition_count = 0
-        self.lines = []
-        self.function_declarations = []
         self.context = Context()
         self.condition_context = Context()
-        self.current_and_end = ""
-        self.current_while_body = ""
-        self.current_while_end = ""
+        self.current_cond_end = ""
         self.condition_context = []
+        self.lines = []
+        self.function_declarations = []
+        self.global_variables = []
+        self.global_variables_context = Context()
 
     def get_count(self):
         self.count += 1
@@ -163,3 +163,6 @@ class Emitter(object):
     
     def exit_condition_scope(self):
         self.condition_context.exit_scope()
+    
+    def reset_condition_context(self):
+        self.condition_context = []
