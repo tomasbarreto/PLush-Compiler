@@ -11,11 +11,12 @@ class Emitter(object):
         self.add_count = 0
         self.sub_count = 0
         self.mult_count = 0
+        self.div_count = 0
         self.function_count = 0
         self.call_count = 0
         self.cmp_count = 0
-        self.add_count = 0
         self.condition_count = 0
+        self.index_count = 0
         self.context = Context()
         self.condition_context = Context()
         self.current_cond_end = ""
@@ -24,6 +25,10 @@ class Emitter(object):
         self.function_declarations = []
         self.global_variables = []
         self.global_variables_context = Context()
+        self.function_declarations_context = Context()
+        self.array_dimensions_context = Context()
+        self.is_if = False
+        self.is_array_assignment = False
 
     def get_count(self):
         self.count += 1
@@ -80,6 +85,14 @@ class Emitter(object):
     def get_condition_count(self):
         self.condition_count += 1
         return self.condition_count
+    
+    def get_index_count(self):
+        self.index_count += 1
+        return self.index_count
+    
+    def get_div_count(self):
+        self.div_count += 1
+        return self.div_count
 
     def get_id(self):
         id = self.get_count()
@@ -136,6 +149,14 @@ class Emitter(object):
     def get_condition_id(self):
         id = self.get_condition_count()
         return f"cond_{id}"
+    
+    def get_index_id(self):
+        id = self.get_index_count()
+        return f"arrayidx_{id}"
+    
+    def get_div_id(self):
+        id = self.get_div_count()
+        return f"div_{id}"
 
     def __lshift__(self, v):
         self.lines.append(v)

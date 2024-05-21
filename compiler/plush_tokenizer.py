@@ -14,7 +14,7 @@ TOKEN_TYPES = [
     ('INT', r'\d{1,3}(\_\d{3})+|\d+'),
     ('IDENTIFIER', r'[a-zA-Z_][a-zA-Z0-9_]*'),
     ('CHAR', r'\'.\''),
-    ('STRING', r'\".*?\"'),
+    ('STRING', r'\".*?\n?.*?\"'),
     ('EQUALITYOPERATOR', r'\=|\!\='),
     ('NEG', r'\!'),
     ('COMPAREOPERATOR', r'\>\=|\<\=|\>|\<'),

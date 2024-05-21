@@ -296,7 +296,7 @@ class Int:
 @dataclass
 class String:
     def __init__ (self, value):
-        self.value = value
+        self.value = repr(value)
 
     def __repr__(self) -> str:
         return f"String({self.value})"

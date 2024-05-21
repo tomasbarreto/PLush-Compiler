@@ -82,12 +82,19 @@ def verify(node, ctx: Context):
         # Verify the left and right expressions
         right = verify(node.right, ctx)
         left = verify(node.left, ctx)
-
-        if right not in ("int", "float", Expression):
-            raise TypeError(f"Incompatible type: {right}")
         
-        if left not in ("int", "float", Expression):
-            raise TypeError(f"Incompatible type: {left}")
+        if isinstance(node, (Add, Sub)) or (isinstance(node, Mult) and node.operator in ['*', '/', '^']):
+            if right not in ("int", "float", Expression):
+                raise TypeError(f"Incompatible type: {right}")
+            
+            if left not in ("int", "float", Expression):
+                raise TypeError(f"Incompatible type: {left}")
+        elif isinstance(node, Mult) and node.operator in ['%']:
+            if right not in ("int", Expression):
+                raise TypeError(f"Incompatible type: {right}")
+            
+            if left not in ("int", Expression):
+                raise TypeError(f"Incompatible type: {left}")
 
         if right != left:
             raise TypeError(f"Incompatible types: {right} and {left}")
@@ -133,8 +140,10 @@ def verify(node, ctx: Context):
         if expr_type != "boolean":
             raise TypeError(f"If conditions must have type booean! Not type {expr_type}!")
 
+        ctx.enter_scope()
         for instruction in node.code_block:
             verify(instruction, ctx)
+        ctx.exit_scope()
     elif isinstance(node, FunctionDeclaration):
         if ctx.has_function(node.name):
             raise TypeError(f"Function {node.name} already declared!")
@@ -256,8 +265,12 @@ def verify(node, ctx: Context):
     elif isinstance(node, ProcedureCall):
         if not ctx.has_function_def(node.name) and not ctx.has_function(node.name):
             raise TypeError(f"Procedure {node.name} not defined nor declared!")
+        
+        if isExternalFunction(node.name):
+            for argument in node.arguments.arguments:
+                verify(argument.value, ctx)
 
-        if ctx.has_function_def(node.name):
+        if ctx.has_function_def(node.name) and not isExternalFunction(node.name):
 
             if ctx.get_type_function_def(node.name) != 'void':
                 raise TypeError(f"Procedure {node.name} must be of type void!")
@@ -272,6 +285,7 @@ def verify(node, ctx: Context):
                 raise TypeError(f"Procedure {node.name} expects less arguments!")
             
             for argument in node.arguments.arguments:
+                verify(argument.value, ctx)
                 if ctx.get_type_function_def_param(node.name, index_param) != verify(argument.value, ctx):
                     raise TypeError(f"Incompatible types in procedure call {node.name}!")
                 index_param += 1
@@ -306,7 +320,10 @@ def verify(node, ctx: Context):
             idenfier_type = ctx.get_type(node.identifier.name)
         elif isinstance(node.identifier, FunctionCall):
             verify(node.identifier, ctx)
-            idenfier_type = ctx.get_type_function(node.identifier.name)
+            if ctx.has_function(node.identifier.name):
+                idenfier_type = ctx.get_type_function(node.identifier.name)
+            elif ctx.has_function_def(node.identifier.name):
+                idenfier_type = ctx.get_type_function_def(node.identifier.name)
 
         if idenfier_type[0] != '[':
             raise TypeError(f"Variable {node.identifier.name} is not an array!")
@@ -437,3 +454,6 @@ def delete_duplicates(lst):
             seen.add(item)
     
     return '[' + ', '.join(result) + ']'
+
+def isExternalFunction(name):
+    return name in ['printf']

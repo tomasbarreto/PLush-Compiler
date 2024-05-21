@@ -586,7 +586,7 @@ def parse(tokens):
             expr = OPERATION()
             REMOVE_PAREN()
 
-            return Expression(expr)
+            return expr
         else:
             result = VALUE()
             return result
