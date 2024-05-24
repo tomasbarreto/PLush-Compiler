@@ -6,115 +6,68 @@ from context import Context
 from emitter import Emitter
 
 source_code = '''
-function print_float(var x : float) : void;
+val m1_rows : int := 3;
+val m1_cols : int := 2;
+val m2_rows : int := 2;
+val m2_cols : int := 2;
 
-var a : string := "hello";
+function get_array2d(val rows : int, val cols : int) : [[int]];
 
-function print_int(var x : int) : void;
+function print_int_array(val arr : [int], val size : int) : void;
 
-function add(var x : int, var y : int) : int {
-    add := x + y;
+function print_int(val n : int) : void;
+
+function matrixProduct(val m1 : [[int]], val m2 : [[int]]) : [[int]]{
+    val res : [[int]] := get_array2d(m1_rows, m2_cols);
+    var m1RowIdx : int := 0;
+    while  m1RowIdx < m1_rows {
+        var m2ColIdx : int := 0;
+        while m2ColIdx<m2_rows{
+            var m2RowIdx : int := 0;
+            while m2RowIdx<m2_rows {
+                res[m1RowIdx][m2ColIdx] := res[m1RowIdx][m2ColIdx] + m1[m1RowIdx][m2RowIdx]*m2[m2RowIdx][m2ColIdx];
+                m2RowIdx := m2RowIdx + 1;
+            }
+            m2ColIdx := m2ColIdx + 1;
+        }
+        m1RowIdx := m1RowIdx + 1;
+    }
+    matrixProduct := res;
 }
 
-function get_array(var nr_positios : int) : [int];
 
-function get_array2d(var nr_positios : int, var nr_positios2 : int) : [[int]];
+function print_matrix(val m : [[int]], val rows : int, val cols : int) : void {
+    var i : int := 0;
+    while i < rows{
+        print_int_array(m[i], cols);
+        i := i + 1;
+    }
+}
 
-function print_string(var x : string) : void;
-
-function concat_strings(var x : string, var y : string) : string;
-
-function get_array2d_char(var nr_positions : int) : [char];
-
-function print_char(var a : char) : void;
 
 function main() : void {
+    val m1 : [[int]] := get_array2d(m1_rows, m1_cols);
+    val m2 : [[int]] := get_array2d(m2_rows, m2_cols);
 
-    var o : float := 2.0;
-    var new : float := 1.0 / o;
+    m1[0][0] := 1;
+    m1[0][1] := 2;
+    m1[1][0] := 3;
+    m1[1][1] := 4;
+    m1[2][0] := 5;
+    m1[2][1] := 6;
 
-    print_float(new);
+    m2[0][0] := 1;
+    m2[0][1] := 2;
+    m2[1][0] := 3;
+    m2[1][1] := 4;
 
-    var a : [int] := get_array(10);
-    var b : [[int]] := get_array2d(10, 10);
+    
+    print_matrix(matrixProduct(m1, m2), m1_rows, m2_cols);
 
-    var i : int := 0;
-    while i < 10 {
-        var xdd : int := a[i] + 1;
-        print_int(xdd);
-        i := i + 1;
-    }
+    print_int(get_array2d(2, 2)[0][0]);
 
-    var fdsa : int := a[0];
-    print_int(fdsa);
-
-    print_int(get_array(15)[14]);
-
-    i := 0;
-    var j : int := 0;
-
-    while i < 10 {
-        while j < 10 {
-            var xdd : int := b[i][j];
-            print_int(xdd);
-            j := j + 1;
-        }
-        i := i + 1;
-    }
-
-    var x : int := add(1, 2);
-    printf("x: %d\n", x);
-    var t : float := 3.139999999999;
-    print_float(t);
-
-    t := 3.1 + 3.1;
-    print_float(t);
-
-    a[1] := 100;
-
-    print_int(a[1]);
-
-    print_string("hello kekw\nCARECA");
-
-    var new_string : string := "teste";
-    var new_string2 : string := "this is a test";
-    var new_string3 : string := concat_strings(new_string, new_string2);
-
-    print_string(new_string3);
-
-    var isA : boolean := false;
-    var isB : boolean := true;
-    var isC : boolean := true;
-
-    if isC && isB && isA {
-        x := x + 1;
-        print_int(x);
-        if isA || isB {
-            x := x + 1;
-            print_int(x);
-        }
-        else {
-            x := x - 1;
-            print_int(x);
-        }
-
-        while x < 10 {
-            x := x + 1;
-            var z : int := 3;
-            while z > 0 {
-                z := z - 1;
-                if z > -1 {
-                    print_int(x);
-                }
-            }
-        }
-    }
-    else {
-        x := x - 1;
-        print_int(x);
-    }
-
-    var z : int := 0;
+    val x : int := 5;
+    x := x + 1;
 }
 '''
 tokens = tokenize(source_code)
@@ -130,7 +83,7 @@ context.set_type_function_def("printf", "void")
 typed_ast = verify(ast, context)
 
 emitter = Emitter()
-emitter.function_declarations.append("declare i32 @printf(ptr noundef, ...)\n")
+emitter.function_declarations.append("declare double @pow(ptr noundef, ...)\n")
 llvm_code = compile(typed_ast, emitter)
 
 for line in llvm_code:

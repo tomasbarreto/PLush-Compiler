@@ -3,6 +3,7 @@ class Context(object):
         self.stack = [{}]
         self.function_stack = []
         self.function_def_stack = []
+        self.constant_stack = [{}]
     
     def get_type(self, name):
         for scope in self.stack:
@@ -100,3 +101,29 @@ class Context(object):
             if function_name == first_key:
                 wanted_scope = scope
                 return len(wanted_scope) - 1
+            
+    # constant stack
+    def get_constant_type(self, name):
+        for scope in self.constant_stack:
+            if name in scope:
+                return scope[name]
+        raise TypeError(f"Variavel {name} nao esta no contexto")
+    
+    def set_constant_type(self, name, value):
+        scope = self.constant_stack[0]
+        scope[name] = value
+
+    def has_const(self, name):
+        for scope in self.constant_stack:
+            if name in scope:
+                return True
+        return False
+
+    def has_const_in_current_scope(self, name):
+        return name in self.constant_stack[0]
+
+    def enter_const_scope(self):
+        self.constant_stack.insert(0, {})
+
+    def exit_const_scope(self):
+        self.constant_stack.pop(0)

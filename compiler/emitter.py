@@ -27,6 +27,7 @@ class Emitter(object):
         self.global_variables_context = Context()
         self.function_declarations_context = Context()
         self.array_dimensions_context = Context()
+        self.variable_type_context = Context()
         self.is_if = False
         self.is_array_assignment = False
 

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 void print_int(int x);
 
@@ -18,6 +19,17 @@ void print_float(float x) {
 
 void print_char(char x) {
     printf("%c\n", x);
+}
+
+void print_double(double x) {
+    printf("%f\n", x);
+}
+
+void print_int_array(int* arr, int size) {
+    for (int i = 0; i < size; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
 }
 
 int* get_array(int nr_positions) {
@@ -62,4 +74,12 @@ char* get_array2d_char(int nr_positions) {
         ptr[i] = 'a';
     }
     return ptr;
+}
+
+void print_boolean(int x) {
+    if (x == 1) {
+        printf("true\n");
+    } else {
+        printf("false\n");
+    }
 }

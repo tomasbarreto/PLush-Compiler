@@ -28,10 +28,17 @@ def verify(node, ctx: Context):
         
         # Save the variable in the context
         ctx.set_type(node.name, node.type)
+
+        if node.declaration_type == 'VAL':    
+            ctx.set_constant_type(node.name, node.declaration_type)
     elif isinstance(node, VariableAssignment):
         # Check if the variable is not declared
         if not ctx.has_var(node.name):
             raise TypeError(f"Variable {node.name} not declared!")
+        
+        if ctx.has_const(node.name):
+            raise TypeError(f"Cannot assign to a constant variable {node.name}!")
+        
         # Verify the value of the variable
         expr_type = verify(node.value, ctx)
 
@@ -125,9 +132,11 @@ def verify(node, ctx: Context):
         verify(node.then_block, ctx)
         ctx.exit_scope()
         if node.else_block.instructions:
+            ctx.enter_const_scope()
             ctx.enter_scope()
             verify(node.else_block, ctx)
             ctx.exit_scope()
+            ctx.exit_const_scope()
     elif isinstance(node, ThenBlock):
         for instruction in node.instructions:
             verify(instruction, ctx)
@@ -140,10 +149,12 @@ def verify(node, ctx: Context):
         if expr_type != "boolean":
             raise TypeError(f"If conditions must have type booean! Not type {expr_type}!")
 
+        ctx.enter_const_scope()
         ctx.enter_scope()
         for instruction in node.code_block:
             verify(instruction, ctx)
         ctx.exit_scope()
+        ctx.exit_const_scope()
     elif isinstance(node, FunctionDeclaration):
         if ctx.has_function(node.name):
             raise TypeError(f"Function {node.name} already declared!")
@@ -173,11 +184,15 @@ def verify(node, ctx: Context):
                 raise TypeError(f"Function {node.name} expects more arguments!")
             
         ctx.enter_function_scope()
-        ctx.set_type_function(node.name, node.type)  
+        ctx.set_type_function(node.name, node.type)
+        ctx.enter_const_scope()
 
         if node.parameters:
             for param in node.parameters.parameters:
                 ctx.set_type_function(param.name, param.type)
+
+                if param.declaration_type == 'const':
+                    ctx.set_const(param.name)
 
         # typecheck the actual function declaration
 
@@ -193,6 +208,7 @@ def verify(node, ctx: Context):
             verify(instruction, ctx)
 
         ctx.exit_scope()
+        ctx.exit_const_scope()
 
     elif isinstance(node, FunctionDefinition):
         if ctx.has_function_def(node.name):
@@ -305,7 +321,7 @@ def verify(node, ctx: Context):
                 raise TypeError(f"Function {node.name} expects less arguments!")
 
             for argument in node.arguments.arguments:
-                if ctx.get_type_function_param(node.name, index_param) != verify(argument.value.expr, ctx):
+                if ctx.get_type_function_param(node.name, index_param) != verify(argument.value, ctx):
                     raise TypeError(f"Incompatible types in function call {node.name}!")
                 index_param += 1
                 nr_args -= 1

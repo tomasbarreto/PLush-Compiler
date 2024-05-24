@@ -451,12 +451,12 @@ def parse(tokens):
         left = AND()
         if lookahead() == 'OROPERATOR':
             operator = eat('OROPERATOR')[1]
-            right = OPERATION()
+            right = OR()
 
             return Or(
                 operator = operator,
                 left = Expression(left),
-                right = right
+                right = Expression(right)
             )
         else:
             pass
@@ -464,59 +464,31 @@ def parse(tokens):
         return left
     
     def AND():
-        left = NEG()
+        left = EQUALITY()
         if lookahead() == 'ANDOPERATOR':
             operator = eat('ANDOPERATOR')[1]
-            right = OPERATION()
+            right = AND()
 
             return And(
                 operator = operator,
                 left = Expression(left),
-                right = right
+                right = Expression(right)
             )
         else:
             pass
 
         return left
-    
-    def NEG():
-        if lookahead() == 'NEG':
-            operator = eat('NEG')[1]
-            expr = OPERATION()
-
-            return Unary(
-                operator = operator,
-                expr = expr
-            )
-        elif lookahead() == 'SUBTRACTIONOPERATOR':
-            operator = eat('SUBTRACTIONOPERATOR')[1]
-            expr = OPERATION()
-
-            return Unary(
-                operator = operator,
-                expr = expr
-            )
-        elif lookahead() == 'ADDICTIONOPERATOR':
-            operator = eat('ADDICTIONOPERATOR')[1]
-            expr = OPERATION()
-
-            return Unary(
-                operator = operator,
-                expr = expr
-            )
-        else:
-            return EQUALITY()
         
     def EQUALITY():
         left = RELATIONAL()
         if lookahead() == 'EQUALITYOPERATOR':
             operator = eat('EQUALITYOPERATOR')[1]
-            right = OPERATION()
+            right = EQUALITY()
 
             return Equality(
                 operator = operator,
                 left = Expression(left),
-                right = right
+                right = Expression(right)
             )
         else:
             pass
@@ -527,12 +499,12 @@ def parse(tokens):
         left = ADDITIVE()
         if lookahead() == 'COMPAREOPERATOR':
             operator = eat('COMPAREOPERATOR')[1]
-            right = OPERATION()
+            right = RELATIONAL()
 
             return Compare(
                 operator = operator,
                 left = Expression(left),
-                right = right
+                right = Expression(right)
             )
         else:
             pass
@@ -543,21 +515,21 @@ def parse(tokens):
         left = MULTIPLICATIVE()
         if lookahead() == 'ADDICTIONOPERATOR':
             operator = eat('ADDICTIONOPERATOR')[1]
-            right = OPERATION()
+            right = ADDITIVE()
 
             return Add(
                 operator = operator,
                 left = Expression(left),
-                right = right
+                right = Expression(right)
             )
         elif lookahead() == 'SUBTRACTIONOPERATOR':
             operator = eat('SUBTRACTIONOPERATOR')[1]
-            right = OPERATION()
+            right = ADDITIVE()
 
             return Sub(
                 operator = operator,
                 left = Expression(left),
-                right = right
+                right = Expression(right)
             )
         else:
             pass
@@ -565,21 +537,49 @@ def parse(tokens):
         return left
 
     def MULTIPLICATIVE():
-        left = TERMINAL()
+        left = NEG()
         if lookahead() == 'MULTIPLICATIONOPERATOR':
             operator = eat('MULTIPLICATIONOPERATOR')[1]
-            right = OPERATION()
+            right = MULTIPLICATIVE()
 
             return Mult(
                 operator = operator,
                 left = Expression(left),
-                right = right
+                right = Expression(right)
             )
         else:
             pass
 
         return left
     
+    def NEG():
+        if lookahead() == 'NEG':
+            operator = eat('NEG')[1]
+            expr = Expression(NEG())
+
+            return Unary(
+                operator = operator,
+                expr = expr
+            )
+        elif lookahead() == 'SUBTRACTIONOPERATOR':
+            operator = eat('SUBTRACTIONOPERATOR')[1]
+            expr = Expression(NEG())
+
+            return Unary(
+                operator = operator,
+                expr = expr
+            )
+        elif lookahead() == 'ADDICTIONOPERATOR':
+            operator = eat('ADDICTIONOPERATOR')[1]
+            expr = Expression(NEG())
+
+            return Unary(
+                operator = operator,
+                expr = expr
+            )
+        else:
+            return TERMINAL()
+
     def TERMINAL():
         if lookahead() == 'LPAREN':
             REMOVE_PAREN()
