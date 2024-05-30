@@ -1,5 +1,7 @@
-from context import Context
+from z3 import *
 from plush_ast import *
+from context import Context
+from liquid_typechecker import liquid_typecheck, parse
 
 class TypeError(Exception):
     pass
@@ -20,15 +22,167 @@ def verify(node, ctx: Context):
 
         node_type = node.type
 
-        if isinstance(expr_type, str) and expr_type[0] == '[':
-            if expr_type != node.type:
-                raise TypeError(f"Incompatible types: {node.type} and {expr_type}")
-        elif expr_type != node_type:
-            raise TypeError(f"Incompatible types: {node_type} and {expr_type}")
-        
-        # Save the variable in the context
-        ctx.set_type(node.name, node.type)
+        if not isinstance(node_type, LiquidType):
+            if isinstance(expr_type, LiquidType):
+                if expr_type.type != node_type:
+                    raise TypeError(f"Incompatible types: {node_type} and {expr_type}")
+            elif isinstance(expr_type, str) and expr_type[0] == '[':
+                if expr_type != node.type:
+                    raise TypeError(f"Incompatible types: {node.type} and {expr_type}")
+            elif expr_type != node_type:
+                raise TypeError(f"Incompatible types: {node_type} and {expr_type}")
+            
+            if isinstance(node.value.expr, (Int, Float, Boolean, Char, Unary)):
+                ctx.set_liquid_type(node.name, Equality('=', VariableAccess(node.name), node.value.expr))
 
+            if isinstance(node.value.expr, VariableAccess):
+                ctx.set_liquid_type(node.name, Equality('=', VariableAccess(node.name), node.value.expr))
+
+            if isinstance(node.value.expr, FunctionCall):
+                ctx.set_liquid_type(node.name, Equality('=', VariableAccess(node.name), VariableAccess(node.value.expr.name)))
+
+            ctx.set_type(node.name, node.type)
+        else:
+            if isinstance(node.value.expr, (Int, Float, Boolean, Char, Unary)):
+                if node_type.type != expr_type:
+                    raise TypeError(f"Incompatible types: {node_type.type} and {expr_type}")
+
+                ctx.set_liquid_type(node.name, node.type.predicate)
+                ctx.set_liquid_type(node.name, Equality('=', VariableAccess(node.name), node.value.expr))
+                verify_liquid_type(node, ctx)
+            elif isinstance(node.value.expr, VariableAccess):  
+
+                if not isinstance(expr_type, LiquidType):
+                    if expr_type != node_type.type:
+                        raise TypeError(f"Incompatible types: {node_type.type} and {expr_type}")
+                else:
+                    if node_type.type != expr_type.type:
+                        raise TypeError(f"Incompatible types: {node_type.type} and {expr_type.type}")
+
+                if ctx.has_liquid(node.value.expr.name):
+                    variable_clauses = ctx.get_liquid_type(node.value.expr.name)
+
+                    for clause in variable_clauses:
+                        ctx.set_liquid_type(node.name, clause)
+
+                ctx.set_liquid_type(node.name, node.type.predicate)
+                ctx.set_liquid_type(node.name, Equality('=', VariableAccess(node.name), VariableAccess(node.value.expr.name)))
+
+                if isinstance(expr_type, str):
+                    if expr_type != node.type.type:
+                        raise TypeError(f"Incompatible types: {node_type.type} and {expr_type}")
+                elif isinstance(expr_type, LiquidType):
+                    if expr_type.type != node_type.type:
+                        raise TypeError(f"Incompatible types: {node_type.type} and {expr_type.type}")
+
+                verify_liquid_type(node, ctx)
+
+                value_clauses = ctx.get_liquid_type(node.value.expr.name)
+
+                for clause in value_clauses:
+                    ctx.set_liquid_type(node.name, clause)
+            elif isinstance(node.value.expr, FunctionCall):
+                ctx.set_type(node.name, node.type)
+
+                if not isinstance(expr_type, LiquidType):
+                    raise TypeError(f"Function call {node.value.expr.name} does not return a liquid type!")
+                else:
+                    if node_type.type != expr_type.type:
+                        raise TypeError(f"Incompatible types: {node_type.type} and {expr_type.type}")
+                    
+                ctx.set_liquid_type(node.name, node.type.predicate)
+                ctx.set_liquid_type(node.name, Equality('=', VariableAccess(node.name), VariableAccess(node.value.expr.name)))
+
+                verify_liquid_type(node, ctx)
+            elif isinstance(node.value.expr, Add):
+                ctx.set_type(node.name, node.type)
+                left_type = verify(node.value.expr.left, ctx)
+                right_type = verify(node.value.expr.right, ctx)
+
+                if isinstance(node.value.expr.left.expr, (Add, Sub, Mult)) or isinstance(node.value.expr.right.expr, (Add, Sub, Mult)):
+                    raise TypeError(f"Liquid typechecking only supported for binary sum operations!")
+
+                if isinstance(left_type, LiquidType):
+                    if isinstance(right_type, LiquidType):
+                        if left_type.type != right_type.type:
+                            raise TypeError(f"Incompatible types: {left_type.type} and {right_type.type}")
+                    else:
+                        if left_type.type != right_type:
+                            raise TypeError(f"Incompatible types: {left_type.type} and {right_type}")
+                else:
+                    if isinstance(right_type, LiquidType):
+                        if left_type != right_type.type:
+                            raise TypeError(f"Incompatible types: {left_type} and {right_type.type}")
+                    else:
+                        if left_type != right_type:
+                            raise TypeError(f"Incompatible types: {left_type} and {right_type}")
+                
+                if isinstance(node_type, LiquidType):
+                    if isinstance(left_type, LiquidType):
+                        if left_type.type != node_type.type:
+                            raise TypeError(f"Incompatible types: {left_type.type} and {node_type.type}")
+                    else:
+                        if left_type != node_type.type:
+                            raise TypeError(f"Incompatible types: {left_type} and {node_type.type}")
+                else:
+                    if isinstance(left_type, LiquidType):
+                        if left_type.type != node_type:
+                            raise TypeError(f"Incompatible types: {left_type.type} and {node_type}")
+                    else:
+                        if left_type != node_type:
+                            raise TypeError(f"Incompatible types: {left_type} and {node_type}")
+                
+                solver = Solver()
+
+                if isinstance(node_type, LiquidType):
+                    solver = liquid_typecheck(solver, node_type.predicate, ctx)
+
+                if isinstance(node.value.expr.left.expr, VariableAccess):
+                    solver = liquid_typecheck(solver, left_type.predicate, ctx)
+
+                    left_clauses = ctx.get_liquid_type(node.value.expr.left.expr.name)
+
+                    for clause in left_clauses:
+                        liquid_typecheck(solver, clause, ctx)
+                else:
+                    if not isinstance(node.value.expr.left.expr, (Int, Float, Unary)):
+                        raise TypeError(f"Liquid typechecking not supported for this operation: {node.value.expr.left}")
+                
+                if isinstance(node.value.expr.right.expr, VariableAccess):
+                    solver = liquid_typecheck(solver, right_type.predicate, ctx)
+
+                    right_clauses = ctx.get_liquid_type(node.value.expr.right.expr.name)
+
+                    for clause in right_clauses:
+                        liquid_typecheck(solver, clause, ctx)
+                else:
+                    if not isinstance(node.value.expr.right.expr, (Int, Float, Unary)):
+                        raise TypeError(f"Liquid typechecking not supported for this operation: {node.value.expr.right}")
+
+                sum_components = parse(node.value.expr, ctx, solver)
+
+                var_sum = ""
+
+                if isinstance(node_type, LiquidType):
+                    if node_type.type == 'int':
+                        var_sum = z3.Int(node.name)
+                    elif node_type.type == 'float':
+                        var_sum = z3.Real(node.name)
+                else:
+                    if node_type == 'int':
+                        var_sum = z3.Int(node.name)
+                    elif node_type == 'float':
+                        var_sum = z3.Real(node.name)
+
+                solver.add(var_sum == sum_components[0] + sum_components[1])
+
+                if solver.check() == unsat:
+                    raise TypeError(f"Variable {node.name} does not satisfy the liquid type!")
+                
+                ctx.set_liquid_type(node.name, node.type.predicate)
+            else:
+                raise TypeError(f"Liquid typechecking not supported for this operation: {node.value.expr}")
+        
         if node.declaration_type == 'VAL':    
             ctx.set_constant_type(node.name, node.declaration_type)
     elif isinstance(node, VariableAssignment):
@@ -39,13 +193,41 @@ def verify(node, ctx: Context):
         if ctx.has_const(node.name):
             raise TypeError(f"Cannot assign to a constant variable {node.name}!")
         
-        # Verify the value of the variable
         expr_type = verify(node.value, ctx)
 
         var_type = ctx.get_type(node.name)
 
-        if expr_type != var_type:
-            raise TypeError(f"Incompatible types: {var_type} and {expr_type}")
+        if not isinstance(var_type, LiquidType):
+            if isinstance(expr_type, LiquidType):
+                raise TypeError(f"Variable {node.name} does not have a liquid type!")
+            else:
+                if expr_type != var_type:
+                    raise TypeError(f"Incompatible types: {var_type} and {expr_type}")
+        else:
+            if not isinstance(expr_type, LiquidType):
+                if expr_type != var_type.type:
+                    raise TypeError(f"Incompatible types: {var_type.type} and {expr_type}")
+            else:
+                if expr_type.type != var_type.type:
+                    raise TypeError(f"Incompatible types: {var_type.type} and {expr_type.type}")
+
+            if isinstance(node.value.expr, VariableAccess):
+                ctx.reset_liquid_type_clauses(node.name)
+                ctx.set_liquid_type(node.name, Equality('=', VariableAccess(node.name), node.value.expr))
+                verify_liquid_type(node, ctx)
+
+                value_clauses = ctx.get_liquid_type(node.value.expr.name)
+
+                for clause in value_clauses:
+                    ctx.set_liquid_type(node.name, clause)
+                    
+            elif isinstance(node.value.expr, (Int, Float, Unary)):
+                ctx.reset_liquid_type_clauses(node.name)
+                ctx.set_liquid_type(node.name, Equality('=', VariableAccess(node.name), node.value.expr))
+                verify_liquid_type(node, ctx)
+            else:
+                raise TypeError(f"Liquid typechecking not supported for this operation: {node.value}")
+        
     elif isinstance(node, Expression):
         expr_type = verify(node.expr, ctx)
         node.type = expr_type
@@ -77,6 +259,12 @@ def verify(node, ctx: Context):
         right = verify(node.right, ctx)
         left = verify(node.left, ctx)
 
+        if isinstance(right, LiquidType):
+            right = right.type
+        
+        if isinstance(left, LiquidType):
+            left = left.type
+
         if right != left:
             raise TypeError(f"Tipos incompatíveis: {right} e {left}")
         
@@ -89,6 +277,12 @@ def verify(node, ctx: Context):
         # Verify the left and right expressions
         right = verify(node.right, ctx)
         left = verify(node.left, ctx)
+
+        if isinstance(right, LiquidType):
+            right = right.type
+        
+        if isinstance(left, LiquidType):
+            left = left.type
         
         if isinstance(node, (Add, Sub)) or (isinstance(node, Mult) and node.operator in ['*', '/', '^']):
             if right not in ("int", "float", Expression):
@@ -128,15 +322,21 @@ def verify(node, ctx: Context):
         if expr_type != "boolean":
             raise TypeError(f"If conditions must have type booean! Not type {expr_type}!")
 
+        ctx.enter_liquid_scope()
+        ctx.enter_const_scope()
         ctx.enter_scope()
         verify(node.then_block, ctx)
         ctx.exit_scope()
+        ctx.exit_const_scope()
+        ctx.exit_liquid_scope()
         if node.else_block.instructions:
+            ctx.enter_liquid_scope()
             ctx.enter_const_scope()
             ctx.enter_scope()
             verify(node.else_block, ctx)
             ctx.exit_scope()
             ctx.exit_const_scope()
+            ctx.exit_liquid_scope()
     elif isinstance(node, ThenBlock):
         for instruction in node.instructions:
             verify(instruction, ctx)
@@ -149,12 +349,14 @@ def verify(node, ctx: Context):
         if expr_type != "boolean":
             raise TypeError(f"If conditions must have type booean! Not type {expr_type}!")
 
+        ctx.enter_liquid_scope()
         ctx.enter_const_scope()
         ctx.enter_scope()
         for instruction in node.code_block:
             verify(instruction, ctx)
         ctx.exit_scope()
         ctx.exit_const_scope()
+        ctx.exit_liquid_scope()
     elif isinstance(node, FunctionDeclaration):
         if ctx.has_function(node.name):
             raise TypeError(f"Function {node.name} already declared!")
@@ -184,8 +386,9 @@ def verify(node, ctx: Context):
                 raise TypeError(f"Function {node.name} expects more arguments!")
             
         ctx.enter_function_scope()
-        ctx.set_type_function(node.name, node.type)
         ctx.enter_const_scope()
+        ctx.enter_liquid_scope()
+        ctx.set_type_function(node.name, node.type)
 
         if node.parameters:
             for param in node.parameters.parameters:
@@ -199,6 +402,9 @@ def verify(node, ctx: Context):
         ctx.enter_scope()
 
         ctx.set_type(node.name, node.type)
+
+        if isinstance(node.type, LiquidType):
+            ctx.set_liquid_type(node.name, node.type.predicate)
         
         if node.parameters:
             for param in node.parameters.parameters:
@@ -209,6 +415,14 @@ def verify(node, ctx: Context):
 
         ctx.exit_scope()
         ctx.exit_const_scope()
+        ctx.exit_liquid_scope()
+
+        if ctx.has_function(node.name) and ctx.has_function_def(node.name):
+            if ctx.get_type_function(node.name) != ctx.get_type_function_def(node.name):
+                raise TypeError(f"Incompatible types in function declaration {node.name}!")
+        
+        if isinstance(ctx.get_type_function(node.name), LiquidType):
+            ctx.set_liquid_type(node.name, ctx.get_type_function(node.name).predicate)
 
     elif isinstance(node, FunctionDefinition):
         if ctx.has_function_def(node.name):
@@ -218,6 +432,13 @@ def verify(node, ctx: Context):
             raise TypeError(f"Cannot define a function that was already declared - function {node.name}")
         
         ctx.enter_function_def_scope()
+
+        if isinstance(node.type, LiquidType):
+            if node.type.type == 'void':
+                raise TypeError(f"Cannot set a return liquid type for a void function!")
+            if node.type.type.startswith('['):
+                raise TypeError(f"Liquid typechecking for functions that return an array is not supported!")
+
         ctx.set_type_function_def(node.name, node.type)      
         
         if node.parameters:
@@ -242,9 +463,27 @@ def verify(node, ctx: Context):
             
             for argument in node.arguments.arguments:
                 param_type = ctx.get_type_function_def_param(node.name, index_arg)
+                arg_type = verify(argument.value, ctx)
+                
+                if isinstance(param_type, LiquidType):
+                    if isinstance(argument.value.expr, (Int, Float, Unary)):
+                        if param_type.type != arg_type:
+                            raise TypeError(f"Incompatible types in function call {node.name}!")
+                        
+                    elif isinstance(argument.value.expr, VariableAccess):
+                        if param_type.type != arg_type:
+                            raise TypeError(f"Incompatible types in function call {node.name}!")
+                        
+                    else:
+                        raise TypeError(f"Operation not supported for liquid typechecking in function call {node.name}!")
+                else:
+                    if isinstance(arg_type, LiquidType):
+                        if param_type != arg_type.type:
+                            raise TypeError(f"Incompatible types in function call {node.name}!")
+                    else:
+                        if param_type != arg_type:
+                            raise TypeError(f"Incompatible types in function call {node.name}!")
 
-                if param_type != verify(argument.value, ctx):
-                    raise TypeError(f"Incompatible types in function call {node.name}!")
                 index_arg += 1
                 nr_args -= 1
             
@@ -263,13 +502,50 @@ def verify(node, ctx: Context):
             if len(node.arguments.arguments) > nr_args:
                 raise TypeError(f"Function {node.name} expects less arguments!")
 
+            ctx.enter_liquid_scope()
+
             for argument in node.arguments.arguments:
                 param_type = ctx.get_type_function_param(node.name, index_arg)
+                arg_type = verify(argument.value, ctx)
+                
+                if isinstance(param_type, LiquidType):
+                    if isinstance(argument.value.expr, (Int, Float, Unary)):
+                        if param_type.type != arg_type:
+                            raise TypeError(f"Incompatible types in function call {node.name}!")
+                        
+                    elif isinstance(argument.value.expr, VariableAccess):
+                        if isinstance(arg_type, LiquidType):
+                            if isinstance(param_type, LiquidType):
+                                if param_type.type != arg_type.type:
+                                    raise TypeError(f"Incompatible types in function call {node.name}!")
+                            else:
+                                if param_type != arg_type.type:
+                                    raise TypeError(f"Incompatible types in function call {node.name}!")
+                        else:
+                            if isinstance(param_type, LiquidType):
+                                raise TypeError(f"Arguments in function call {node.name} must be liquid types when the function parameter is a liquid type!")
 
-                if param_type != verify(argument.value, ctx):
-                    raise TypeError(f"Incompatible types in function call {node.name}!")
+                            if param_type != arg_type:
+                                raise TypeError(f"Incompatible types in function call {node.name}!")
+
+                    else:
+                        raise TypeError(f"Operation not supported for liquid typechecking in in the arguments of the function call {node.name}!")
+        
+                    ctx.set_liquid_type(ctx.get_name_function_param(node.name, index_arg), Equality('=', VariableAccess(ctx.get_name_function_param(node.name, index_arg)), argument.value.expr))
+                else:
+                    if isinstance(arg_type, LiquidType):
+                        if param_type != arg_type.type:
+                            raise TypeError(f"Incompatible types in function call {node.name}!")
+                    else:
+                        if param_type != arg_type:
+                            raise TypeError(f"Incompatible types in function call {node.name}!")
+
                 index_arg += 1
                 nr_args -= 1
+            
+            verify_liquid_type(node, ctx)
+
+            ctx.exit_liquid_scope()
             
             if nr_args != 0:
                 raise TypeError(f"Function {node.name} expects more arguments!")
@@ -301,15 +577,38 @@ def verify(node, ctx: Context):
                 raise TypeError(f"Procedure {node.name} expects less arguments!")
             
             for argument in node.arguments.arguments:
-                verify(argument.value, ctx)
-                if ctx.get_type_function_def_param(node.name, index_param) != verify(argument.value, ctx):
-                    raise TypeError(f"Incompatible types in procedure call {node.name}!")
+                param_type = ctx.get_type_function_def_param(node.name, index_param)
+                arg_type = verify(argument.value, ctx)
+                
+                if isinstance(param_type, LiquidType):
+                    if isinstance(argument.value.expr, (Int, Float, Unary)):
+                        if param_type.type != arg_type:
+                            raise TypeError(f"Incompatible types in function call {node.name}!")
+                        
+                    elif isinstance(argument.value.expr, VariableAccess):
+                        if isinstance(arg_type, LiquidType):
+                            if param_type.type != arg_type.type:
+                                raise TypeError(f"Incompatible types in function call {node.name}!")
+                        else:
+                            if param_type.type != arg_type:
+                                raise TypeError(f"Incompatible types in function call {node.name}!")
+                        
+                    else:
+                        raise TypeError(f"Operation not supported for liquid typechecking in the arguments of the procedure call {node.name}!")
+                else:
+                    if isinstance(arg_type, LiquidType):
+                        if param_type != arg_type.type:
+                            raise TypeError(f"Incompatible types in function call {node.name}!")
+                    else:
+                        if param_type != arg_type:
+                            raise TypeError(f"Incompatible types in function call {node.name}!")
+
                 index_param += 1
                 nr_args -= 1
-
+            
             if nr_args != 0:
                 raise TypeError(f"Procedure {node.name} expects more arguments!")
-        
+            
         if ctx.has_function(node.name):
             nr_args = ctx.get_function_nr_args(node.name)
             index_param = 0
@@ -320,12 +619,44 @@ def verify(node, ctx: Context):
             if len(node.arguments.arguments) > nr_args:
                 raise TypeError(f"Function {node.name} expects less arguments!")
 
+            ctx.enter_liquid_scope()
+
             for argument in node.arguments.arguments:
-                if ctx.get_type_function_param(node.name, index_param) != verify(argument.value, ctx):
-                    raise TypeError(f"Incompatible types in function call {node.name}!")
+                param_type = ctx.get_type_function_param(node.name, index_param)
+                arg_type = verify(argument.value, ctx)
+                
+                if isinstance(param_type, LiquidType):
+                    if isinstance(argument.value.expr, (Int, Float, Unary)):
+                        if param_type.type != arg_type:
+                            raise TypeError(f"Incompatible types in function call {node.name}!")
+                        
+                    elif isinstance(argument.value.expr, VariableAccess):
+                        if isinstance(arg_type, LiquidType):
+                            if param_type.type != arg_type.type:
+                                raise TypeError(f"Incompatible types in function call {node.name}!")
+                        else:
+                            if param_type.type != arg_type:
+                                raise TypeError(f"Incompatible types in function call {node.name}!")
+                        
+                    else:
+                        raise TypeError(f"Operation not supported for liquid typechecking in function call {node.name}!")
+                
+                    ctx.set_liquid_type(ctx.get_name_function_param(node.name, index_param), Equality('=', VariableAccess(ctx.get_name_function_param(node.name, index_param)), argument.value.expr))
+                else:
+                    if isinstance(arg_type, LiquidType):
+                        if param_type != arg_type.type:
+                            raise TypeError(f"Incompatible types in function call {node.name}!")
+                    else:
+                        if param_type != arg_type:
+                            raise TypeError(f"Incompatible types in function call {node.name}!")
+
                 index_param += 1
                 nr_args -= 1
             
+            verify_liquid_type(node, ctx)
+
+            ctx.exit_liquid_scope()
+
             if nr_args != 0:
                 raise TypeError(f"Function {node.name} expects more arguments!")
             
@@ -473,3 +804,115 @@ def delete_duplicates(lst):
 
 def isExternalFunction(name):
     return name in ['printf']
+
+def verify_liquid_type(node, ctx: Context):
+    if isinstance(node, VariableDeclaration):
+        ctx.set_type(node.name, node.type)
+        
+    if isinstance(node, (ProcedureCall, FunctionCall)):
+        for param_index in range(len(node.arguments.arguments)):
+            if ctx.has_function(node.name):
+                solver = Solver()
+                
+                predicate_param = ctx.get_type_function_param(node.name, param_index)
+
+                if not isinstance(predicate_param, LiquidType):
+                    continue
+
+                predicate_arg = ctx.get_liquid_type(ctx.get_name_function_param(node.name, param_index))
+
+                if isinstance(node.arguments.arguments[param_index].value.expr, VariableAccess):
+                    previous_arg_clauses = ctx.get_liquid_type(node.arguments.arguments[param_index].value.expr.name)
+
+                    for clause in previous_arg_clauses:
+                        solver = liquid_typecheck(solver, clause, ctx)
+
+                ctx.enter_scope()
+                ctx.set_type(ctx.get_name_function_param(node.name, param_index), predicate_param.type)
+
+                for clause in predicate_arg:
+                    solver = liquid_typecheck(solver, clause, ctx)  
+
+                solver = liquid_typecheck(solver, predicate_param.predicate, ctx)
+
+                ctx.exit_scope()
+
+                if solver.check() == unsat:
+                    raise TypeError(f"Something went wrong with the liquid typechecking of the function/procedure call {node.name}!")
+            
+            param_index += 1
+    elif isinstance(node.value.expr, FunctionCall):
+        function_predicate = ctx.get_liquid_type(node.value.expr.name)
+        variable_predicate = ctx.get_liquid_type(node.name)
+
+        solver = Solver()
+
+        function_return_type = ctx.get_type_function(node.value.expr.name)
+        variable_type = ctx.get_type(node.name)
+
+        liquid_typecheck(solver, function_return_type.predicate, ctx)
+        liquid_typecheck(solver, variable_type.predicate, ctx)
+        liquid_typecheck(solver, Equality('=', VariableAccess(node.name), VariableAccess(node.value.expr.name)), ctx)
+
+        if solver.check() == unsat:
+            raise TypeError(f"Variable {node.name} does not satisfy the liquid type!")
+
+        solver = Solver()
+
+        for clause in variable_predicate:
+            solver = liquid_typecheck(solver, clause, ctx)
+
+        for clause in function_predicate:
+            solver = liquid_typecheck(solver, clause, ctx)
+
+        if solver.check() == unsat:
+            raise TypeError(f"Variable {node.name} does not satisfy the liquid type!")
+        
+    elif isinstance(node.value.expr, VariableAccess):
+        if not ctx.has_liquid(node.value.expr.name):
+            raise TypeError(f"Variable {node.value.expr.name} does not have a liquid type!")
+        
+        value_predicate = ctx.get_liquid_type(node.value.expr.name)
+
+        solver = Solver()
+
+        variable_predicate = ctx.get_liquid_type(node.name)
+
+        for clause in variable_predicate:
+            solver = liquid_typecheck(solver, clause, ctx)
+
+        for clause in value_predicate:
+            solver = liquid_typecheck(solver, clause, ctx)
+
+        if solver.check() == unsat:
+            raise TypeError(f"Variable {node.name} does not satisfy the liquid type!")
+    elif isinstance(node.value.expr, (Int, Float, Boolean, Char, Unary)):
+        solver = Solver()
+
+        variable_predicate = ctx.get_liquid_type(node.name)
+
+        for clause in variable_predicate:
+            solver = liquid_typecheck(solver, clause, ctx)
+
+        if solver.check() == unsat:
+            raise TypeError(f"Variable {node.name} does not satisfy the liquid type!")
+    
+def uniformize_variables_predicate_param(predicate, variable_name_to_replace):
+    if isinstance(predicate, (Equality, Compare, And, Or)):
+        result_left = uniformize_variables_predicate_param(predicate.left, variable_name_to_replace)
+        result_right = uniformize_variables_predicate_param(predicate.right, variable_name_to_replace)
+
+        if isinstance(predicate, Equality):
+            return Equality(predicate.operator, result_left, result_right)
+        elif isinstance(predicate, Compare):
+            return Compare(predicate.operator, result_left, result_right)
+        elif isinstance(predicate, And):
+            return And(result_left, result_right)
+        elif isinstance(predicate, Or):
+            return Or(result_left, result_right)
+    elif isinstance(predicate, VariableAccess):
+        return VariableAccess(variable_name_to_replace)
+    elif isinstance(predicate, Expression):
+        return uniformize_variables_predicate_param(predicate.expr, variable_name_to_replace)
+
+    return predicate

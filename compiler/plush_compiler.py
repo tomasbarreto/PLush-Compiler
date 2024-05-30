@@ -1,39 +1,44 @@
 from plush_ast import *
 from emitter import Emitter
-from decimal import Decimal
 import struct
 
 def get_expr_type(expr, emitter):
-    if expr.type == "int":
-        return "i32"
-    elif expr.type == "boolean":
-        return "i1"
-    elif expr.type == "float":
-        return "float"
-    elif expr.type == "string":
-        return "ptr"
-    elif expr.type == "char":
-        return "i8"
-    elif expr.type.startswith('['):
-        return "ptr"
+    if isinstance(expr.type, str):
+        if expr.type == "int":
+            return "i32"
+        elif expr.type == "boolean":
+            return "i1"
+        elif expr.type == "float":
+            return "float"
+        elif expr.type == "string":
+            return "ptr"
+        elif expr.type == "char":
+            return "i8"
+        elif expr.type.startswith('['):
+            return "ptr"
+    elif isinstance(expr.type, LiquidType):
+        return get_expr_type(expr.type, emitter)
     
     return expr.type
     
 def str_to_type(type_str):
-    if type_str == "int":
-        return "i32"
-    elif type_str == "boolean":
-        return "i1"
-    elif type_str == "float":
-        return "float"
-    elif type_str == "string":
-        return "ptr"
-    elif type_str == "char":
-        return "i8"
-    elif type_str == "void":
-        return "void"
-    elif type_str.startswith('['):
-        return "ptr"
+    if isinstance(type_str, str):
+        if type_str == "int":
+            return "i32"
+        elif type_str == "boolean":
+            return "i1"
+        elif type_str == "float":
+            return "float"
+        elif type_str == "string":
+            return "ptr"
+        elif type_str == "char":
+            return "i8"
+        elif type_str == "void":
+            return "void"
+        elif type_str.startswith('['):
+            return "ptr"
+    elif isinstance(type_str, LiquidType):
+        return str_to_type(type_str.type)
 
     return type_str
     
@@ -123,30 +128,33 @@ def process_function_parameters(parameters, emitter):
     return ", ".join(function_parameters)
 
 def create_return_var(name, type, emitter):
-    if type != "void":
-        new_pointer = name
-        emitter.context.set_type(name, new_pointer)
+    if isinstance(type, str):
+        if type != "void":
+            new_pointer = name
+            emitter.context.set_type(name, new_pointer)
 
-        if type == "int":
-            emitter << f"   %{new_pointer} = alloca i32"
-            emitter << f"   store i32 0, ptr %{new_pointer}"
-        elif type == "float":
-            emitter << f"   %{new_pointer} = alloca float"
-            emitter << f"   store float {float_to_hex(0.0)}, ptr %{new_pointer}"
-        elif type == "boolean":
-            emitter << f"   %{new_pointer} = alloca i1"
-            emitter << f"   store i1 0, ptr %{new_pointer}"
-        elif type == "string":
-            emitter << f"   %{new_pointer} = alloca ptr"
-            emitter << f"   store ptr null, ptr %{new_pointer}"
-        elif type == "char":
-            emitter << f"   %{new_pointer} = alloca i8"
-            emitter << f"   store i8 0, ptr %{new_pointer}"
-        elif type.startswith('['):
-            emitter << f"   %{new_pointer} = alloca ptr"
-            emitter << f"   store ptr null, ptr %{new_pointer}"
-
-        return new_pointer
+            if type == "int":
+                emitter << f"   %{new_pointer} = alloca i32"
+                emitter << f"   store i32 0, ptr %{new_pointer}"
+            elif type == "float":
+                emitter << f"   %{new_pointer} = alloca float"
+                emitter << f"   store float {float_to_hex(0.0)}, ptr %{new_pointer}"
+            elif type == "boolean":
+                emitter << f"   %{new_pointer} = alloca i1"
+                emitter << f"   store i1 0, ptr %{new_pointer}"
+            elif type == "string":
+                emitter << f"   %{new_pointer} = alloca ptr"
+                emitter << f"   store ptr null, ptr %{new_pointer}"
+            elif type == "char":
+                emitter << f"   %{new_pointer} = alloca i8"
+                emitter << f"   store i8 0, ptr %{new_pointer}"
+            elif type.startswith('['):
+                emitter << f"   %{new_pointer} = alloca ptr"
+                emitter << f"   store ptr null, ptr %{new_pointer}"
+            
+            return new_pointer
+    elif isinstance(type, LiquidType):
+        create_return_var(name, type.type, emitter)
 
 def declare_global_variables(statements, emitter):
     result = []
@@ -154,6 +162,11 @@ def declare_global_variables(statements, emitter):
         if isinstance(statement, VariableDeclaration):
             new_pointer = emitter.get_prt_id()
             expr_type = get_expr_type(statement.value, emitter)
+
+            if isinstance(statement.value.expr, FunctionCall):
+                raise Exception("Global variables cannot be initialized with function calls")
+            elif isinstance(statement.value.expr, VariableAccess):
+                raise Exception("Global variables cannot be initialized with variable accesses")
             
             if expr_type == "ptr":
                 string_len = len(statement.value.expr.value) - 4 + 1
@@ -161,14 +174,30 @@ def declare_global_variables(statements, emitter):
                 emitter.global_variables.append(f'@{new_pointer} = private unnamed_addr constant [{string_len} x i8] c"{element[1:-1][1:-1]}\\00"')
                 emitter.global_variables_context.set_type(statement.name, new_pointer)
             elif expr_type == "i32":
-                emitter.global_variables.append(f'@{new_pointer} = dso_local global i32 {statement.value.expr.value}')
-                emitter.global_variables_context.set_type(statement.name, new_pointer)
+                if isinstance(statement.value.expr, Unary):
+                    if statement.value.expr.operator == "-":
+                        emitter.global_variables.append(f'@{new_pointer} = dso_local global i32 {-int(statement.value.expr.expr.expr.value)}')
+                    elif statement.value.expr.operator == "+":
+                        emitter.global_variables.append(f'@{new_pointer} = dso_local global i32 {statement.value.expr.expr.expr.value}')
+
+                    emitter.global_variables_context.set_type(statement.name, new_pointer)
+                else:
+                    emitter.global_variables.append(f'@{new_pointer} = dso_local global i32 {statement.value.expr.value}')
+                    emitter.global_variables_context.set_type(statement.name, new_pointer)
             elif expr_type == "i1":
                 emitter.global_variables.append(f'@{new_pointer} = dso_local global i1 {statement.value.expr.value}')
                 emitter.global_variables_context.set_type(statement.name, new_pointer)
             elif expr_type == "float":
-                emitter.global_variables.append(f'@{new_pointer} = dso_local global float {float_to_hex(float(statement.value.expr.value))}')
-                emitter.global_variables_context.set_type(statement.name, new_pointer)
+                if isinstance(statement.value.expr, Unary):
+                    if statement.value.expr.operator == "-":
+                            emitter.global_variables.append(f'@{new_pointer} = dso_local global float {float_to_hex(-float(statement.value.expr.expr.expr.value))}')
+                    elif statement.value.expr.operator == "+":
+                        emitter.global_variables.append(f'@{new_pointer} = dso_local global float {float_to_hex(float(statement.value.expr.expr.expr.value))}')
+
+                    emitter.global_variables_context.set_type(statement.name, new_pointer)
+                else:    
+                    emitter.global_variables.append(f'@{new_pointer} = dso_local global float {float_to_hex(float(statement.value.expr.value))}')
+                    emitter.global_variables_context.set_type(statement.name, new_pointer)
         else:
             result.append(statement)
     
@@ -267,6 +296,8 @@ def compile(node, emitter=Emitter()):
         elif is_float(expression):
             expression = float_to_hex(expression)
             emitter << f"   store {expr_type} {expression}, ptr %{pointer_name}"
+        elif emitter.global_variables_context.has_var(expression):
+            emitter << f"   store {get_expr_type(node.value, emitter)} @{expression}, ptr %{pointer}"
         else:
             emitter << f"   store {expr_type} %{expression}, ptr %{pointer_name}"
 
@@ -334,6 +365,15 @@ def compile(node, emitter=Emitter()):
         # check if the left and right are actual types
         are_actual_types = are_both_actual_types(left, right)
 
+        left_type = node.left.type
+        right_type = node.right.type
+
+        if isinstance(left_type, LiquidType):
+            node.left.type = left_type.type
+
+        if isinstance(right_type, LiquidType):
+            node.right.type = right_type.type
+
         if are_actual_types:
             if isinstance(node, Add):
                 if isinstance(node.left.expr, Int):
@@ -385,6 +425,15 @@ def compile(node, emitter=Emitter()):
     )):
         left = compile(node.left, emitter)
         right = compile(node.right, emitter)
+
+        left_type = node.left.type
+        right_type = node.right.type
+
+        if isinstance(left_type, LiquidType):
+            node.left.type = left_type.type
+
+        if isinstance(right_type, LiquidType):
+            node.right.type = right_type.type
 
         # check if the left and right are actual types
         are_actual_types = are_both_actual_types(left, right)
@@ -696,6 +745,8 @@ def compile(node, emitter=Emitter()):
             emitter << f"   store {get_expr_type(node.value, emitter)} {expression}, ptr %{pointer}"
         elif is_float(expression):
             emitter << f"   store {get_expr_type(node.value, emitter)} {float_to_hex(expression)}, ptr %{pointer}"
+        elif emitter.global_variables_context.has_var(expression):
+            emitter << f"   store {get_expr_type(node.value, emitter)} @{expression}, ptr %{pointer}"
         else:
             emitter << f"   store {get_expr_type(node.value, emitter)} %{expression}, ptr %{pointer}"
     elif isinstance(node, And):
@@ -831,13 +882,12 @@ def compile(node, emitter=Emitter()):
             FunctionCall,
             Add,
             Sub,
-            Mult
+            Mult,
+            ArrayAccess
         )):
             symbol = "%"
         
 
         emitter << f"   store {get_expr_type(node.right, emitter)} {symbol}{expression}, ptr %{array_position_pointer}"
-
-        print(array_position_pointer)
 
     return emitter.global_variables + emitter.lines + emitter.function_declarations

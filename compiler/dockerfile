@@ -42,7 +42,9 @@ RUN gcc --version && \
     clang --version && \
     /usr/lib/llvm-18/bin/llvm-config --version && \
     python3 --version && \
-    pip3 --version
+    pip3 --version 
+
+RUN pip3 install z3-solver
 
 # Clean up unnecessary files
 RUN apt-get clean && \
@@ -52,7 +54,7 @@ RUN apt-get clean && \
 COPY . /workspace/compiler
 
 # Set working directory
-WORKDIR /workspace
+WORKDIR /workspace/compiler
 
 # Set environment variables to use Clang as the default compiler
 ENV CC=clang
@@ -60,3 +62,7 @@ ENV CXX=clang++
 
 # Default command
 CMD ["/bin/bash"]
+
+# Build and run commands
+# docker build -t my_compiler_image .
+# docker run -it --name my_compiler_container my_compiler_image

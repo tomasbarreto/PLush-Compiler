@@ -19,3 +19,9 @@ char* get_array2d_char(int nr_positions);
 void print_char(char character);
 
 void print_bool(int boolean);
+
+void print_char_array(char* arr, int size);
+
+char* get_char_array(char* arr, int size);
+
+int* get_random_int_array(int size);

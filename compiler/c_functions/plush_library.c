@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 void print_int(int x);
 
@@ -82,4 +83,30 @@ void print_boolean(int x) {
     } else {
         printf("false\n");
     }
+}
+
+void print_char_array(char* arr, int size) {
+    for (int i = 0; i < size; i++) {
+        printf("%c", arr[i]);
+    }
+    printf("\n");
+}
+
+char* get_char_array(char* arr, int size) {
+    char* ptr = (char*) malloc(size * sizeof(char));
+    for (int i = 0; i < size; i++) {
+        ptr[i] = arr[i];
+    }
+    return ptr;
+}
+
+int* get_random_int_array(int size) {
+    int* ptr = (int*) malloc(size * sizeof(int));
+
+    srand(time(NULL));
+
+    for (int i = 0; i < size; i++) {
+        ptr[i] = rand() % 100;
+    }
+    return ptr;
 }

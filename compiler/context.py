@@ -4,6 +4,8 @@ class Context(object):
         self.function_stack = []
         self.function_def_stack = []
         self.constant_stack = [{}]
+        self.liquid_stack = [{}]
+        self.function_sign_stack = [{}]
     
     def get_type(self, name):
         for scope in self.stack:
@@ -51,6 +53,13 @@ class Context(object):
             if function_name == first_key:
                 wanted_scope = scope
                 return list(wanted_scope.items())[param_position + 1][1]
+    
+    def get_name_function_param(self, function_name, param_position):
+        for scope in self.function_stack:
+            first_key = next(iter(scope))
+            if function_name == first_key:
+                wanted_scope = scope
+                return list(wanted_scope.items())[param_position + 1][0]
         
     def get_type_function(self, function_name):
         for scope in self.function_stack:
@@ -127,3 +136,75 @@ class Context(object):
 
     def exit_const_scope(self):
         self.constant_stack.pop(0)
+
+    # liquid stack
+    def get_liquid_type(self, name):
+        for scope in self.liquid_stack:
+            if name in scope:
+                return scope[name]
+        raise TypeError(f"Variavel {name} nao esta no contexto")
+
+    def set_liquid_type(self, name, value):
+        if name in self.liquid_stack[0]:
+            target_scope = self.liquid_stack[0][name]
+            target_scope.append(value)
+        else:
+            scope = self.liquid_stack[0]
+            scope[name] = [value]
+
+    def has_liquid(self, name):
+        for scope in self.liquid_stack:
+            if name in scope:
+                return True
+        return False
+    
+    def has_liquid_in_current_scope(self, name):
+        return name in self.liquid_stack[0]
+    
+    def enter_liquid_scope(self):
+        self.liquid_stack.insert(0, {})
+
+    def exit_liquid_scope(self):
+        self.liquid_stack.pop(0)
+
+    def reset_liquid_type_clauses(self, name):
+        for scope in self.liquid_stack:
+            if name in scope:
+                scope[name] = [scope[name][0]]
+
+    # function sign stack
+    def set_function_sign(self, name, value):
+        scope = self.function_sign_stack[0]
+        scope[name] = value
+    
+    def get_function_sign(self, name):
+        for scope in self.function_sign_stack:
+            if name in scope:
+                return scope[name]
+        raise TypeError(f"Variavel {name} nao esta no contexto")
+    
+    def has_function_sign(self, name):
+        for scope in self.function_sign_stack:
+            if name in scope:
+                return True
+        return False
+    
+    def enter_function_sign_scope(self):
+        self.function_sign_stack.insert(0, {})
+
+    def exit_function_sign_scope(self):
+        self.function_sign_stack.pop(0)
+
+    def get_type_function_sign_param(self, function_name, param_position):
+        for scope in self.function_sign_stack:
+            first_key = next(iter(scope))
+            if function_name == first_key:
+                wanted_scope = scope
+                return list(wanted_scope.items())[param_position + 1][1]
+            
+    def get_name_function_sign_param(self, function_name, param_position):
+        for scope in self.function_stack:
+            first_key = next(iter(scope))
+            if function_name == first_key:
+                wanted_scope = scope
+                return list(wanted_scope.items())[param_position + 1][0]

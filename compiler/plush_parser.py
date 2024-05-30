@@ -246,6 +246,17 @@ def parse(tokens):
             eat('RRECPAREN')
 
             return '[' + type + ']' 
+        elif lookahead() == 'LCURLYPAREN':
+            eat('LCURLYPAREN')
+            type = TYPE()
+            eat('VERTICALBAR')
+            predicate = OPERATION()
+            eat('RCURLYPAREN')
+
+            return LiquidType(
+                type = type,
+                predicate = predicate
+            )
         else:
             raise ParsingException()
         
@@ -592,9 +603,5 @@ def parse(tokens):
             return result
 
     ast = S()
-
-    print("\nPARSING SUCCESSFUL!")
-
-    print(ast)
 
     return ast

@@ -24,6 +24,7 @@ TOKEN_TYPES = [
     ('SUBTRACTIONOPERATOR', r'\-'),
     ('MULTIPLICATIONOPERATOR', r'[\*\/\%\^]'),
     ('ASSIGNMENT', r'\:\='),
+    ('VERTICALBAR', r'\|'),
     ('LPAREN', r'\('),
     ('RPAREN', r'\)'),
     ('LRECPAREN', r'\['),
