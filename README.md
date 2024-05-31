@@ -22,12 +22,12 @@ Inside the compiler folder:
 ## How compile a plush program
 
 1. Download the project and unzip it.
-1. Write your plush program and save it in the folder compiler/programs as a .pl file. (see the next section)
-2. Make sure you are in the project root directory (plush) and go to the compiler directory: `cd compiler`
-3. Run the following command to build the docker image for the environment where the compiler is going to execute (it might take a bit of time): `docker build -t my_compiler_image .`
-4. Run the container with the following command (after entering the command you will be presented with the container terminal): `docker run --rm -it --name my_compiler_container my_compiler_image`
-5. Compile and run your program by entering the following command: `./plush.sh programs/your_program.pl`
-6. If just want to see the AST in a json format without compiling enter the following command: `./plush.sh --tree programs/your_program.pl`
+2. Write your plush program and save it in the folder compiler/programs as a .pl file. (see the next section)
+3. Make sure you are in the project root directory (plush) and go to the compiler directory: `cd compiler`
+4. Run the following command to build the docker image for the environment where the compiler is going to execute (it might take a bit of time): `docker build -t my_compiler_image .`
+5. Run the container with the following command (after entering the command you will be presented with the container terminal): `docker run --rm -it --name my_compiler_container my_compiler_image`
+6. Compile and run your program by entering the following command: `./plush.sh programs/your_program.pl`
+7. If just want to see the AST in a json format without compiling enter the following command: `./plush.sh --tree programs/your_program.pl`
 
 
 ## Details when writting a plush program
