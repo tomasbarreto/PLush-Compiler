@@ -169,8 +169,11 @@ def declare_global_variables(statements, emitter):
                 raise Exception("Global variables cannot be initialized with variable accesses")
             
             if expr_type == "ptr":
+                print(statement.value.expr.value)
+                print(len(statement.value.expr.value))
                 string_len = len(statement.value.expr.value) - 4 + 1
-                element = statement.value.expr.value.replace(r"\n", r"\0A")
+                string_len -= 2 * statement.value.expr.value.count("\\n")
+                element = statement.value.expr.value.replace('\\n', r'0A')
                 emitter.global_variables.append(f'@{new_pointer} = private unnamed_addr constant [{string_len} x i8] c"{element[1:-1][1:-1]}\\00"')
                 emitter.global_variables_context.set_type(statement.name, new_pointer)
             elif expr_type == "i32":
@@ -204,9 +207,9 @@ def declare_global_variables(statements, emitter):
     return InstructionList(result)
 
 def process_string(string):
-    string_len = len(string) - 3
-    str = string.replace(r"\n", r"\0A")
-    string_len -= str.count(r"\0A")
+    string_len = len(string) - 4 + 1
+    string_len -= 2 * string.count("\\n")
+    str = string.replace('\\n', r'0A')
 
     return (str[1:-1][1:-1], string_len)
 
@@ -629,9 +632,15 @@ def compile(node, emitter=Emitter()):
             elif content.startswith("0x"):
                 argument_list.append(f"{expr_type} {content}")
             elif isinstance(argument.value.expr, String):
-                    argument_list.append(f"{expr_type} @{content}")
+                argument_list.append(f"{expr_type} @{content}")
+            elif isinstance(argument.value.expr, VariableAccess):
+                if emitter.global_variables_context.has_var(argument.value.expr.name):
+                    print(emitter.global_variables_context.get_type(argument.value.expr.name))
+                    argument_list.append(f"{expr_type} @{emitter.global_variables_context.get_type(argument.value.expr.name)}")
+                else:
+                    argument_list.append(f"{expr_type} %{content}")
             else:
-                argument_list.append(f"{expr_type} %{content}")
+                    argument_list.append(f"{expr_type} %{content}")
 
 
         if isinstance(node, ProcedureCall):
