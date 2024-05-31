@@ -533,32 +533,32 @@ def compile(node, emitter=Emitter()):
 
                 return mod_id
             elif node.operator == "^":
-                pow_id = emitter.get_pow_id()
+                pow_id = emitter.get_mult_id()
 
                 newleft = left
                 newright = right
                 
-                if node.left.type == "int":
-                    if isinstance(left, int) and isinstance(right, int):
+                if node.left.type == "float":
+                    if isinstance(left, float) and isinstance(right, float):
                         newleft = emitter.get_prt_id()
                         newright = emitter.get_prt_id()
-                        emitter << f"   %{newleft} = sext i32 {left} to double"
-                        emitter << f"   %{newright} = sext i32 {right} to double"
-                    elif isinstance(left, int):
+                        emitter << f"   %{newleft} = fpext float {left} to double"
+                        emitter << f"   %{newright} = fpext float {right} to double"
+                    elif isinstance(left, float):
                         newleft = emitter.get_prt_id()
                         newright = emitter.get_prt_id()
-                        emitter << f"   %{newleft} = sext i32 {left} to double"
-                        emitter << f"   %{newright} = sext i32 %{right} to double"
-                    elif isinstance(right, int):
+                        emitter << f"   %{newleft} = fpext float {left} to double"
+                        emitter << f"   %{newright} = fpext float %{right} to double"
+                    elif isinstance(right, float):
                         newleft = emitter.get_prt_id()
                         newright = emitter.get_prt_id()
-                        emitter << f"   %{newleft} = sext i32 %{left} to double"
-                        emitter << f"   %{newright} = sext i32 {right} to double"
+                        emitter << f"   %{newleft} = fpext float %{left} to double"
+                        emitter << f"   %{newright} = fpext float {right} to double"
                     else:
                         newleft = emitter.get_prt_id()
                         newright = emitter.get_prt_id()
-                        emitter << f"   %{newleft} = sext i32 %{left} to double"
-                        emitter << f"   %{newright} = sext i32 %{right} to double"
+                        emitter << f"   %{newleft} = fpext float %{left} to double"
+                        emitter << f"   %{newright} = fpext float %{right} to double"
                 elif node.left.type == "float":
                     if is_float(left) and is_float(right):
                         newleft = emitter.get_prt_id()
@@ -583,7 +583,11 @@ def compile(node, emitter=Emitter()):
 
                 emitter << f"   %{pow_id} = call double @pow(double %{newleft}, double %{newright})"
 
-                return pow_id
+                pow_id2 = emitter.get_mult_id()
+
+                emitter << f"   %{pow_id2} = fptrunc double %{pow_id} to float"
+
+                return pow_id2
 
             
             

@@ -284,7 +284,7 @@ def verify(node, ctx: Context):
         if isinstance(left, LiquidType):
             left = left.type
         
-        if isinstance(node, (Add, Sub)) or (isinstance(node, Mult) and node.operator in ['*', '/', '^']):
+        if isinstance(node, (Add, Sub)) or (isinstance(node, Mult) and node.operator in ['*', '/']):
             if right not in ("int", "float", Expression):
                 raise TypeError(f"Incompatible type: {right}")
             
@@ -292,11 +292,17 @@ def verify(node, ctx: Context):
                 raise TypeError(f"Incompatible type: {left}")
         elif isinstance(node, Mult) and node.operator in ['%']:
             if right not in ("int", Expression):
-                raise TypeError(f"Incompatible type: {right}")
+                raise TypeError(f"Incompatible type: {right}, must be int!")
             
             if left not in ("int", Expression):
-                raise TypeError(f"Incompatible type: {left}")
-
+                raise TypeError(f"Incompatible type: {left}, must be int!")
+        elif isinstance(node, Mult) and node.operator in ['^']:
+            if right not in ("float", Expression):
+                raise TypeError(f"Incompatible type: {right}, must be float!")
+            
+            if left not in ("float", Expression):
+                raise TypeError(f"Incompatible type: {left}, must be float!")
+            
         if right != left:
             raise TypeError(f"Incompatible types: {right} and {left}")
         
