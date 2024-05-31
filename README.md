@@ -1,6 +1,6 @@
-## PLUSH
+# PLUSH
 
-# How compile a plush program
+## How compile a plush program
 
 1. Write your plush program and save it in the folder compiler/programs as a .pl file. (see the next section)
 2. Go to the compiler directory: `cd compiler`
@@ -10,7 +10,7 @@
 6. If just want to see the AST in a json format without compiling enter the following command: `./plush.sh --tree your_program.pl`
 
 
-# Details when writting a plush program
+## Details when writting a plush program
 
 1. When declaring (FFI or not) or defining a procedure you must write down its void type.
 2. For every FFI that you want to use in your program, you must declare it before using it, else plush won't know that it exists.
