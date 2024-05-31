@@ -26,10 +26,6 @@ emitter = Emitter()
 emitter.function_declarations.append("declare double @pow(ptr noundef, ...)\n")
 llvm_code = compile(typed_ast, emitter)
 
-# print the llvm code
-for line in llvm_code:
-    print(line)
-
 # write to llvm file
 with open('output.ll', 'w') as f:
     for line in llvm_code:
