@@ -44,7 +44,7 @@ else
   cd c_functions
   gcc -c plush_library.c -o plush_library.o
   cd ..
-  llc -o=program.s output.ll
-  CC -o program program.s c_functions/plush_library.o
+  /usr/lib/llvm-18/bin/llc -o=program.s output.ll
+  $CC -o program program.s c_functions/plush_library.o -lm
   ./program
 fi
