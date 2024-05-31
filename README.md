@@ -16,15 +16,18 @@ Inside the compiler folder:
 6. plush.sh - automated script to compile and run your own plush program when inside the provided docker container (see the next section).
 7. dockerfile - has all the commands to install the necessary tools to run the compiler and build the container image
 8. tree_mode.py - python script that gets called when you want to just see the AST from your plush program.
+9. c_functions - is the folder where u will find the plush ffi library.
+10. programs - is the folder to store your new programs to be compiled (i'm just defining this folder to make sure it all runs as intended)
 
 ## How compile a plush program
 
+1. Download the project and unzip it.
 1. Write your plush program and save it in the folder compiler/programs as a .pl file. (see the next section)
-2. Go to the compiler directory: `cd compiler`
+2. Make sure you are in the project root directory (plush) and go to the compiler directory: `cd compiler`
 3. Run the following command to build the docker image for the environment where the compiler is going to execute (it might take a bit of time): `docker build -t my_compiler_image .`
 4. Run the container with the following command (after entering the command you will be presented with the container terminal): `docker run --rm -it --name my_compiler_container my_compiler_image`
-5. Compile and run your program by entering the following command: `./plush.sh your_program.pl`
-6. If just want to see the AST in a json format without compiling enter the following command: `./plush.sh --tree your_program.pl`
+5. Compile and run your program by entering the following command: `./plush.sh programs/your_program.pl`
+6. If just want to see the AST in a json format without compiling enter the following command: `./plush.sh --tree programs/your_program.pl`
 
 
 ## Details when writting a plush program
