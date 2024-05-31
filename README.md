@@ -17,9 +17,9 @@ Inside the compiler folder:
 3. plush_parse.py - handles the compiler parsing stage (builds the AST).
 4. plush_typechecker.py - handles the compiler typechecking stage.
 5. plush_compiler.py - converts the typechecked AST to LLVM IR code.
-8. tree_mode.py - python script that gets called when you want to just see the AST from your plush program.
-9. c_functions - is the folder where u will find the plush ffi library.
-11. grammar - The grammar folder has an incomplete sketch of the plush grammar.
+6. tree_mode.py - python script that gets called when you want to just see the AST from your plush program.
+7. c_functions - is the folder where u will find the plush ffi library.
+8. grammar - The grammar folder has an incomplete sketch of the plush grammar.
 
 ## How compile a plush program
 
